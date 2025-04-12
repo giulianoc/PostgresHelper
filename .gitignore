@@ -1,32 +1,39 @@
-# Prerequisites
-*.d
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Ignore all
+#*
 
-# Precompiled Headers
-*.gch
-*.pch
+# Unignore all with extensions
+!*.*
 
-# Compiled Dynamic libraries
-*.so
+# Unignore all dirs
+!*/
+
+### Above combination will ignore all files without extension ###
+
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+nbproject
+.DS_Store
+
+#ignora i seguenti eseguibili
+examples/trim/trim
+
+*.cgi
+*.fcgi
+*.sln
+*.ncb
+*.sln
+*.suo
+*.vcproj
+.vscode
+Release
+
+.cache
+
+Makefile
 *.dylib
-*.dll
+*.so
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
