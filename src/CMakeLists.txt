@@ -35,7 +35,21 @@ include_directories("${STRINGUTILS_INCLUDE_DIR}")
 include_directories("${JSONUTILS_INCLUDE_DIR}")
 include_directories("${DBCONN_INCLUDE_DIR}")
 
+if(APPLE)
+  link_directories("${STRINGUTILS_LIB_DIR}")
+  link_directories("${JSONUTILS_LIB_DIR}")
+  link_directories("/opt/homebrew/opt/libpq/lib")
+  link_directories("${PROJECT_SOURCE_DIR}/../deploy/libpqxx/lib")
+endif()
+
 add_library (PostgresHelper SHARED ${SOURCES} ${HEADERS})
+
+if(APPLE)
+  target_link_libraries(PostgresHelper StringUtils)
+  target_link_libraries(PostgresHelper JSONUtils)
+  target_link_libraries(PostgresHelper pqxx)
+  target_link_libraries(PostgresHelper pq)
+endif()
 
 install (TARGETS PostgresHelper DESTINATION lib)
 install (FILES ${HEADERS} DESTINATION include)
