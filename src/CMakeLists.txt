@@ -28,12 +28,12 @@ SET (HEADERS
 	PostgresHelper.h
 )
 
-include_directories("${PROJECT_SOURCE_DIR}/../deploy/spdlog/include")
-include_directories("${PROJECT_SOURCE_DIR}/../deploy/nlohmann/include")
-include_directories("${PROJECT_SOURCE_DIR}/../deploy/libpqxx/include")
-include_directories("${PROJECT_SOURCE_DIR}/CatraLibraries/StringUtils/src")
-include_directories("${PROJECT_SOURCE_DIR}/CatraLibraries/JSONUtils/src")
-include_directories("${PROJECT_SOURCE_DIR}/CatraLibraries/DBConnectionsPool/src")
+include_directories("${SPDLOG_INCLUDE_DIR}")
+include_directories("${NLOHMANN_INCLUDE_DIR}")
+include_directories("${LIBPQXX_INCLUDE_DIR}")
+include_directories("${STRINGUTILS_INCLUDE_DIR}")
+include_directories("${JSONUTILS_INCLUDE_DIR}")
+include_directories("${DBCONN_INCLUDE_DIR}")
 
 add_library (PostgresHelper SHARED ${SOURCES} ${HEADERS})
 
