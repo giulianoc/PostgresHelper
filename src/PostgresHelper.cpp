@@ -355,12 +355,15 @@ string PostgresHelper::getQueryColumn(
 			queryColumn = std::format(
 				"EXTRACT(EPOCH FROM {0} {2}) * 1000 as {1}, "
 				"to_char({0} {2}, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as \"{1}:iso\"", // output: 2018-11-01T15:21:24.000Z
+				// 'utc' non sempre deve essere utilizzato, ad esempio, se il campo date è un timestamp without time zone e viene inserita una data
+				// utc, quando questa data viene recuperata con una select, ritorna già la data utc, la stessa che era stata inserita. In quest'ultimo
+				// caso, AT TIME ZONE 'UTC', farebbe l'effetto contrario aggiungendo 2 ore
 				sqlColumnSchema->columnName, columnName, convertDateFieldsToUtc ? "AT TIME ZONE 'UTC'" : ""
 			);
 		else
 			queryColumn = std::format(
-				"EXTRACT(EPOCH FROM {0}.{1} AT TIME ZONE 'UTC') * 1000 as {2}, to_char({0}.{1}, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as \"{2}:iso\"",
-				requestedTableNameAlias, sqlColumnSchema->columnName, columnName
+				"EXTRACT(EPOCH FROM {0}.{1} {3}) * 1000 as {2}, to_char({0}.{1}, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as \"{2}:iso\"",
+				requestedTableNameAlias, sqlColumnSchema->columnName, columnName, convertDateFieldsToUtc ? "AT TIME ZONE 'UTC'" : ""
 			);
 	}
 	else if (sqlColumnSchema->dataType == "ARRAY")
