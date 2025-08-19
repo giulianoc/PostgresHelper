@@ -575,7 +575,8 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 				", sqlStatement: @{}@"
 				", getConnectionId: @{}@"
 				", elapsed: @{}@",
-				sqlStatement, conn->getConnectionId(), chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - startSql).count()
+				sqlStatement, trans.connection->getConnectionId(),
+				chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - startSql).count()
 			);
 
 			for (auto row : result)
