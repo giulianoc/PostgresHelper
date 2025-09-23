@@ -645,13 +645,20 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 	{
 		sql_error const *se = dynamic_cast<sql_error const *>(&e);
 		if (se != nullptr)
-			SPDLOG_ERROR(
-				"query failed"
-				", query: {}"
-				", exceptionMessage: {}"
-				", conn: {}",
-				se->query(), se->what(), trans.connection->getConnectionId()
-			);
+			try
+			{
+				SPDLOG_ERROR(
+					"query failed"
+					", query: {}"
+					", exceptionMessage: {}"
+					", conn: {}",
+					se->query(), se->what(), trans.connection->getConnectionId()
+				);
+			}
+			catch (...)
+			{
+				SPDLOG_ERROR("exception->what() caused crash");
+			}
 		else
 			SPDLOG_ERROR(
 				"query failed"
