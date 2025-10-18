@@ -1,17 +1,15 @@
 
-#ifndef PostgresHelper_h
-#define PostgresHelper_h
+#pragma once
 
 #include "spdlog/spdlog.h"
 
-#include <cstddef>
-#include <cstdint>
 #include <memory>
 // #define DBCONNECTIONPOOL_LOG
 // #define DBCONNECTIONPOOL_STATS_LOG
 #include <JSONUtils.h>
 #include <PostgresConnection.h>
 #include <string>
+#include <utility>
 
 class PostgresHelper
 {
@@ -20,11 +18,11 @@ class PostgresHelper
 	{
 		SqlColumnSchema(string tableName, string columnName, bool nullable, string dataType, string arrayDataType)
 		{
-			this->tableName = tableName;
-			this->columnName = columnName;
+			this->tableName = std::move(tableName);
+			this->columnName = std::move(columnName);
 			this->nullable = nullable;
-			this->dataType = dataType;
-			this->arrayDataType = arrayDataType;
+			this->dataType = std::move(dataType);
+			this->arrayDataType = std::move(arrayDataType);
 		}
 
 		string tableName;
@@ -63,7 +61,7 @@ class PostgresHelper
 		shared_ptr<Base> value;
 
 	  public:
-		SqlValue() {};
+		SqlValue() = default;
 
 		void setValue(shared_ptr<Base> value) { this->value = value; };
 
@@ -75,6 +73,7 @@ class PostgresHelper
 	class SqlResultSet
 	{
 	  public:
+		virtual ~SqlResultSet() = default;
 		enum SqlValueType
 		{
 			unknown,
@@ -100,9 +99,9 @@ class PostgresHelper
 		// per ogni riga (vector) abbiamo un vettore che contiene i valori delle colonne by Index
 		vector<vector<SqlValue>> _sqlValuesByIndex;
 
-		int32_t _count;
-		chrono::milliseconds _countSqlDuration;
-		chrono::milliseconds _sqlDuration;
+		int32_t _count = 0;
+		chrono::milliseconds _countSqlDuration = {};
+		chrono::milliseconds _sqlDuration = {};
 
 		// temporary vector to fill _sqlValuesByIndex
 		vector<SqlValue> _sqlCurrentRowValuesByIndex;
@@ -114,14 +113,14 @@ class PostgresHelper
 			_sqlColumnTypeByName.clear();
 			_sqlValuesByIndex.clear();
 		};
-		virtual void addColumnValueToCurrentRow(string fieldName, SqlValue sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
+		virtual void addColumnValueToCurrentRow(const string& fieldName, const SqlValue& sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
 		virtual void addCurrentRow()
 		{
 			_sqlValuesByIndex.push_back(_sqlCurrentRowValuesByIndex);
 			_sqlCurrentRowValuesByIndex.clear();
 		};
 		virtual size_t size() { return _sqlValuesByIndex.size(); };
-		virtual bool empty() { return _sqlValuesByIndex.size() == 0; };
+		virtual bool empty() { return _sqlValuesByIndex.empty(); };
 		virtual json asJson();
 		void addColumnType(string fieldName, SqlValueType sqlValueType)
 		{
@@ -133,30 +132,30 @@ class PostgresHelper
 				_sqlColumnTypeByName.insert(make_pair(fmt::format("{} - {}", fieldName, _sqlColumnTypeByIndex.size()), sqlValueType));
 			_sqlColumnTypeByName.insert(make_pair(fieldName, sqlValueType));
 
-			_sqlColumnTypeByIndex.push_back(make_pair(fieldName, sqlValueType));
+			_sqlColumnTypeByIndex.emplace_back(fieldName, sqlValueType);
 		};
-		SqlValueType type(string fieldName);
-		json asJson(string fieldName, SqlValue sqlValue);
+		SqlValueType type(const string& fieldName);
+		json asJson(const string& fieldName, SqlValue sqlValue);
 		string getColumnNameByIndex(int columnIndex) { return _sqlColumnTypeByIndex[columnIndex].first; };
-		int getColumnIndexByName(string columnName)
+		size_t getColumnIndexByName(const string& columnName) const
 		{
-			for (int index = 0, size = _sqlColumnTypeByIndex.size(); index < size; index++)
+			for (size_t index = 0, size = _sqlColumnTypeByIndex.size(); index < size; index++)
 				if (_sqlColumnTypeByIndex[index].first == columnName)
 					return index;
 			return -1;
 		};
 		vector<vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
 		vector<vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
-		vector<vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
-		vector<vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
+		[[nodiscard]] vector<vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
+		[[nodiscard]] vector<vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
 		vector<SqlValue> &operator[](int index) { return _sqlValuesByIndex[index]; }
 
 		void setCount(int32_t count) { _count = count; }
-		int32_t getCount() { return _count; }
+		[[nodiscard]] int32_t getCount() const { return _count; }
 		void setCountSqlDuration(chrono::milliseconds countSqlDuration) { _countSqlDuration = countSqlDuration; }
-		chrono::milliseconds getCountSqlDuration() { return _countSqlDuration; }
+		[[nodiscard]] chrono::milliseconds getCountSqlDuration() const { return _countSqlDuration; }
 		void setSqlDuration(chrono::milliseconds sqlDuration) { _sqlDuration = sqlDuration; }
-		chrono::milliseconds getSqlDuration() { return _sqlDuration; }
+		[[nodiscard]] chrono::milliseconds getSqlDuration() const { return _sqlDuration; }
 	};
 
 	/*
@@ -249,18 +248,16 @@ class PostgresHelper
 		return sqlColumnSchema->dataType;
 	}
 
-	string buildQueryColumns(vector<string> &requestedColumns, bool convertDateFieldsToUtc = false);
-	shared_ptr<PostgresHelper::SqlResultSet> buildResult(result result);
+	string buildQueryColumns(const vector<string> &requestedColumns, bool convertDateFieldsToUtc = false);
+	static shared_ptr<PostgresHelper::SqlResultSet> buildResult(const result &result);
 
   private:
 	map<string, map<string, shared_ptr<SqlColumnSchema>>> _sqlTablesColumnsSchema;
 
-	string getQueryColumn(
-		shared_ptr<SqlColumnSchema> sqlColumnSchema, string requestedTableNameAlias, string requestedColumnName = "",
+	static string getQueryColumn(
+		const shared_ptr<SqlColumnSchema> &sqlColumnSchema, const string &requestedTableNameAlias, const string &requestedColumnName = "",
 		bool convertDateFieldsToUtc = false
 	);
-	string getColumnName(shared_ptr<SqlColumnSchema> sqlColumnSchema, string requestedTableNameAlias, string requestedColumnName);
-	bool isDataTypeManaged(string dataType, string arrayDataType);
+	static string getColumnName(const shared_ptr<SqlColumnSchema> &sqlColumnSchema, const string &requestedTableNameAlias, string requestedColumnName);
+	static bool isDataTypeManaged(const string &dataType, const string &arrayDataType);
 };
-
-#endif

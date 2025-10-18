@@ -3,11 +3,10 @@
 #include "PostgresConnection.h"
 #include "StringUtils.h"
 #include "spdlog/spdlog.h"
-#include <cstdint>
 #include <string>
 #include <utility>
 
-PostgresHelper::PostgresHelper() {}
+PostgresHelper::PostgresHelper() = default;
 PostgresHelper::~PostgresHelper() = default;
 
 // Option 1:
@@ -21,11 +20,11 @@ PostgresHelper::~PostgresHelper() = default;
 //    "#EXTRACT(EPOCH FROM <timestamp column> AT TIME ZONE 'UTC') * 1000 as ..."
 //    or
 //    "#to_char(<timestamp column>, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as ...", // output: 2018-11-01T15:21:24Z
-string PostgresHelper::buildQueryColumns(vector<string> &requestedColumns, bool convertDateFieldsToUtc)
+string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns, bool convertDateFieldsToUtc)
 {
 	string queryColumns;
 
-	if (requestedColumns.size() == 0)
+	if (requestedColumns.empty())
 	{
 		string errorMessage = "no requestedColumns found";
 		SPDLOG_ERROR(errorMessage);
@@ -100,7 +99,7 @@ string PostgresHelper::buildQueryColumns(vector<string> &requestedColumns, bool 
 			}
 			else
 			{
-				size_t endOfColumn = requestedColumnName.find("[");
+				size_t endOfColumn = requestedColumnName.find('[');
 				auto itColumn =
 					(endOfColumn == string::npos ? itTable->second.find(requestedColumnName)
 												 : itTable->second.find(requestedColumnName.substr(0, endOfColumn)));
@@ -128,9 +127,9 @@ string PostgresHelper::buildQueryColumns(vector<string> &requestedColumns, bool 
 	return queryColumns;
 }
 
-shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result result)
+shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const result& result)
 {
-	shared_ptr<PostgresHelper::SqlResultSet> sqlResultSet = make_shared<PostgresHelper::SqlResultSet>();
+	shared_ptr<SqlResultSet> sqlResultSet = make_shared<PostgresHelper::SqlResultSet>();
 
 	sqlResultSet->clearData();
 	int rowIndex = 0;
@@ -140,12 +139,12 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 		for (auto field : row)
 		{
 			string fieldName = field.name();
-			PostgresHelper::SqlResultSet::SqlValueType sqlValueType = PostgresHelper::SqlResultSet::unknown;
+			SqlResultSet::SqlValueType sqlValueType = SqlResultSet::unknown;
 			{
 				switch (field.type())
 				{
 				case 16: // bool
-					sqlValueType = PostgresHelper::SqlResultSet::boolean;
+					sqlValueType = SqlResultSet::boolean;
 					break;
 					/*
 				case 18: // char: field.as<char>() sembra non esistere
@@ -154,33 +153,33 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 					break;
 					*/
 				case 20: // int8
-					sqlValueType = PostgresHelper::SqlResultSet::int64;
+					sqlValueType = SqlResultSet::int64;
 					break;
 				case 21: // int2
-					sqlValueType = PostgresHelper::SqlResultSet::int16;
+					sqlValueType = SqlResultSet::int16;
 					break;
 				case 23: // int4
-					sqlValueType = PostgresHelper::SqlResultSet::int32;
+					sqlValueType = SqlResultSet::int32;
 					break;
 				case 25:   // text
 				case 1114: // timestamp
-					sqlValueType = PostgresHelper::SqlResultSet::text;
+					sqlValueType = SqlResultSet::text;
 					break;
 				case 1000: // array of bool
-					sqlValueType = PostgresHelper::SqlResultSet::vectorBoolean;
+					sqlValueType = SqlResultSet::vectorBoolean;
 					break;
 				case 1007: // array of int32
-					sqlValueType = PostgresHelper::SqlResultSet::vectorInt32;
+					sqlValueType = SqlResultSet::vectorInt32;
 					break;
 				case 1009: // _text
-					sqlValueType = PostgresHelper::SqlResultSet::vectorText;
+					sqlValueType = SqlResultSet::vectorText;
 					break;
 				case 1700: // numeric
-					sqlValueType = PostgresHelper::SqlResultSet::double_;
+					sqlValueType = SqlResultSet::double_;
 					break;
 				case 114:  // json
 				case 3802: // jsonb
-					sqlValueType = PostgresHelper::SqlResultSet::json_;
+					sqlValueType = SqlResultSet::json_;
 					break;
 				default:
 				{
@@ -197,7 +196,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 				}
 				}
 			}
-			PostgresHelper::SqlValue sqlValue;
+			SqlValue sqlValue;
 			{
 				if (field.is_null())
 					// sqlValue.setNull();
@@ -206,22 +205,22 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 				{
 					switch (sqlValueType)
 					{
-					case PostgresHelper::SqlResultSet::boolean:
+					case SqlResultSet::boolean:
 						sqlValue.setValue(make_shared<SqlType<bool>>(field.as<bool>()));
 						break;
-					case PostgresHelper::SqlResultSet::int64:
+					case SqlResultSet::int64:
 						sqlValue.setValue(make_shared<SqlType<int64_t>>(field.as<int64_t>()));
 						break;
-					case PostgresHelper::SqlResultSet::int16:
+					case SqlResultSet::int16:
 						sqlValue.setValue(make_shared<SqlType<int16_t>>(field.as<int16_t>()));
 						break;
-					case PostgresHelper::SqlResultSet::int32:
+					case SqlResultSet::int32:
 						sqlValue.setValue(make_shared<SqlType<int32_t>>(field.as<int32_t>()));
 						break;
-					case PostgresHelper::SqlResultSet::text:
+					case SqlResultSet::text:
 						sqlValue.setValue(make_shared<SqlType<string>>(field.as<string>()));
 						break;
-					case PostgresHelper::SqlResultSet::vectorBoolean:
+					case SqlResultSet::vectorBoolean:
 					{
 						vector<bool> v;
 
@@ -242,7 +241,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
 					}
 					break;
-					case PostgresHelper::SqlResultSet::vectorInt32:
+					case SqlResultSet::vectorInt32:
 					{
 						vector<int32_t> v;
 
@@ -263,7 +262,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
 					}
 					break;
-					case PostgresHelper::SqlResultSet::vectorText:
+					case SqlResultSet::vectorText:
 					{
 						vector<string> v;
 
@@ -284,10 +283,10 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 						sqlValue.setValue(make_shared<SqlType<vector<string>>>(v));
 					}
 					break;
-					case PostgresHelper::SqlResultSet::double_:
+					case SqlResultSet::double_:
 						sqlValue.setValue(make_shared<SqlType<double>>(field.as<double>()));
 						break;
-					case PostgresHelper::SqlResultSet::json_:
+					case SqlResultSet::json_:
 						sqlValue.setValue(make_shared<SqlType<json>>(JSONUtils::toJson(field.as<string>())));
 						break;
 					default:
@@ -321,8 +320,8 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(result resu
 }
 
 string PostgresHelper::getQueryColumn(
-	shared_ptr<SqlColumnSchema> sqlColumnSchema, string requestedTableNameAlias,
-	string requestedColumnName, // serve solamente se identifica un elemento di un array
+	const shared_ptr<SqlColumnSchema>& sqlColumnSchema, const string& requestedTableNameAlias,
+	const string& requestedColumnName, // serve solamente se identifica un elemento di un array
 	bool convertDateFieldsToUtc
 )
 {
@@ -362,13 +361,13 @@ string PostgresHelper::getQueryColumn(
 			);
 		else
 			queryColumn = std::format(
-				"EXTRACT(EPOCH FROM {0}.{1} {3}) * 1000 as {2}, to_char({0}.{1}, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as \"{2}:iso\"",
+				R"(EXTRACT(EPOCH FROM {0}.{1} {3}) * 1000 as {2}, to_char({0}.{1}, 'YYYY-MM-DD"T"HH24:MI:SS.MSZ') as "{2}:iso")",
 				requestedTableNameAlias, sqlColumnSchema->columnName, columnName, convertDateFieldsToUtc ? "AT TIME ZONE 'UTC'" : ""
 			);
 	}
 	else if (sqlColumnSchema->dataType == "ARRAY")
 	{
-		size_t endOfColumn = requestedColumnName.find("[");
+		size_t endOfColumn = requestedColumnName.find('[');
 		if (endOfColumn == string::npos)
 		{
 			if (requestedTableNameAlias.empty())
@@ -400,7 +399,8 @@ string PostgresHelper::getQueryColumn(
 	return queryColumn;
 }
 
-string PostgresHelper::getColumnName(shared_ptr<SqlColumnSchema> sqlColumnSchema, string requestedTableNameAlias, string requestedColumnName)
+string PostgresHelper::getColumnName(const shared_ptr<SqlColumnSchema>& sqlColumnSchema,
+	const string& requestedTableNameAlias, string requestedColumnName)
 {
 	string queryColumnName;
 
@@ -416,13 +416,13 @@ string PostgresHelper::getColumnName(shared_ptr<SqlColumnSchema> sqlColumnSchema
 	else if (sqlColumnSchema->dataType == "ARRAY")
 	{
 		string columnName;
-		size_t endOfColumn = requestedColumnName.find("[");
+		size_t endOfColumn = requestedColumnName.find('[');
 		if (endOfColumn == string::npos)
 			columnName = sqlColumnSchema->columnName;
 		else
 		{
-			columnName = requestedColumnName.replace(requestedColumnName.find("["), 1, "_");
-			columnName = requestedColumnName.replace(requestedColumnName.find("]"), 1, "_");
+			columnName = requestedColumnName.replace(requestedColumnName.find('['), 1, "_");
+			columnName = requestedColumnName.replace(columnName.find(']'), 1, "_");
 		}
 
 		if (requestedTableNameAlias.empty())
@@ -445,7 +445,7 @@ string PostgresHelper::getColumnName(shared_ptr<SqlColumnSchema> sqlColumnSchema
 	return queryColumnName;
 }
 
-bool PostgresHelper::isDataTypeManaged(string dataType, string arrayDataType)
+bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arrayDataType)
 {
 	if (dataType == "\"char\"" || dataType == "integer" || dataType == "smallint" || dataType == "bigint" || dataType == "numeric" ||
 		dataType.starts_with("timestamp") || dataType == "boolean" || dataType == "text" || dataType == "jsonb")
@@ -461,7 +461,7 @@ bool PostgresHelper::isDataTypeManaged(string dataType, string arrayDataType)
 		return false;
 }
 
-json PostgresHelper::SqlResultSet::asJson(string fieldName, SqlValue sqlValue)
+json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlValue)
 {
 	json root = json::array();
 
@@ -471,48 +471,48 @@ json PostgresHelper::SqlResultSet::asJson(string fieldName, SqlValue sqlValue)
 	{
 		switch (type(fieldName))
 		{
-		case PostgresHelper::SqlResultSet::int16:
+		case int16:
 			root = sqlValue.as<int16_t>(-1);
 			break;
-		case PostgresHelper::SqlResultSet::int32:
+		case int32:
 			root = sqlValue.as<int32_t>(-1);
 			break;
-		case PostgresHelper::SqlResultSet::int64:
+		case int64:
 			root = sqlValue.as<int64_t>(-1);
 			break;
-		case PostgresHelper::SqlResultSet::double_:
+		case double_:
 			root = sqlValue.as<double>(-1.0);
 			break;
-		case PostgresHelper::SqlResultSet::text:
+		case text:
 			root = sqlValue.as<string>("");
 			break;
-		case PostgresHelper::SqlResultSet::boolean:
+		case boolean:
 			root = sqlValue.as<bool>(false);
 			break;
-		case PostgresHelper::SqlResultSet::json_:
+		case json_:
 			root = sqlValue.as<json>(nullptr);
 			break;
-		case PostgresHelper::SqlResultSet::vectorInt32:
+		case vectorInt32:
 			for (int32_t value : sqlValue.as<vector<int32_t>>(vector<int32_t>()))
 				root.push_back(value);
 			break;
-		case PostgresHelper::SqlResultSet::vectorInt64:
+		case vectorInt64:
 			for (int64_t value : sqlValue.as<vector<int64_t>>(vector<int64_t>()))
 				root.push_back(value);
 			break;
-		case PostgresHelper::SqlResultSet::vectorDouble:
+		case vectorDouble:
 			for (double value : sqlValue.as<vector<double>>(vector<double>()))
 				root.push_back(value);
 			break;
-		case PostgresHelper::SqlResultSet::vectorText:
-			for (string value : sqlValue.as<vector<string>>(vector<string>()))
+		case vectorText:
+			for (const string& value : sqlValue.as<vector<string>>(vector<string>()))
 				root.push_back(value);
 			break;
-		case PostgresHelper::SqlResultSet::vectorBoolean:
+		case vectorBoolean:
 			for (bool value : sqlValue.as<vector<bool>>(vector<bool>()))
 				root.push_back(value);
 			break;
-		case PostgresHelper::SqlResultSet::unknown:
+		case unknown:
 		default:
 			root = "unknown";
 			break;
@@ -530,12 +530,12 @@ json PostgresHelper::SqlResultSet::asJson()
 		json rowRoot;
 
 		// for (auto sqlValue : row)
-		for (int columnIndex = 0, columnNumber = row.size(); columnIndex < columnNumber; columnIndex++)
+		for (size_t columnIndex = 0, columnNumber = row.size(); columnIndex < columnNumber; columnIndex++)
 		{
 			string fieldName = _sqlColumnTypeByIndex[columnIndex].first;
 			SqlValue sqlValue = row[columnIndex];
 
-			string jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
+			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
 			if (sqlValue.isNull())
 				rowRoot[jsonKey] = nullptr;
 			else
@@ -546,7 +546,7 @@ json PostgresHelper::SqlResultSet::asJson()
 	return jsonRoot;
 }
 
-PostgresHelper::SqlResultSet::SqlValueType PostgresHelper::SqlResultSet::type(string fieldName)
+PostgresHelper::SqlResultSet::SqlValueType PostgresHelper::SqlResultSet::type(const string& fieldName)
 {
 	auto it = _sqlColumnTypeByName.find(fieldName);
 	if (it == _sqlColumnTypeByName.end())
@@ -597,11 +597,11 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 					continue;
 				}
 
-				string tableName = row["table_name"].as<string>();
-				string columnName = row["column_name"].as<string>();
-				string isNullable = row["is_nullable"].as<string>();
-				string dataType = row["data_type"].as<string>();
-				string arrayDataType = row["udt_name"].as<string>();
+				auto tableName = row["table_name"].as<string>();
+				auto columnName = row["column_name"].as<string>();
+				auto isNullable = row["is_nullable"].as<string>();
+				auto dataType = row["data_type"].as<string>();
+				auto arrayDataType = row["udt_name"].as<string>();
 
 				if (!isDataTypeManaged(dataType, arrayDataType))
 				{
