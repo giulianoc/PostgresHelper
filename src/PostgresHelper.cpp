@@ -15,7 +15,7 @@ PostgresHelper::~PostgresHelper() = default;
 // Example: {"content:.title", "content:.*", "content:.sections[1]"}
 // Option 2:
 // requestedColumns: #<custom column>
-// Example: {"#sections[0] as sectionId", "#payload ->> 'channel' as channel"}
+// Example: {"#sections[1] as sectionId", "#payload ->> 'channel' as channel"}
 // In case of a timestamp column (oid: 1114) you can use
 //    "#EXTRACT(EPOCH FROM <timestamp column> AT TIME ZONE 'UTC') * 1000 as ..."
 //    or
