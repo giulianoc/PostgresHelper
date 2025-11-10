@@ -349,7 +349,7 @@ string PostgresHelper::getQueryColumn(
 	}
 	else if (sqlColumnSchema->dataType.starts_with("timestamp"))
 	{
-		// EPOCH ritorna un float (seconds.milliseconds) che potrebbe essere anche +-infinity
+		// EPOCH ritorna un double (seconds.milliseconds) che potrebbe essere anche +-infinity
 		if (requestedTableNameAlias.empty())
 			queryColumn = std::format(
 				"(EXTRACT(EPOCH FROM {0}) * 1000) as {1}, "
