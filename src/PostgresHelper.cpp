@@ -352,7 +352,7 @@ string PostgresHelper::getQueryColumn(
 		// EPOCH ritorna un float (seconds.milliseconds)
 		if (requestedTableNameAlias.empty())
 			queryColumn = std::format(
-				"(EXTRACT(EPOCH FROM {0} {2}) * 1000)::bigint as {1}, "
+				"CASE WHEN {0} = 'infinity' OR {0} = '-infinity' THEN (EXTRACT(EPOCH FROM {0}) * 1000) ELSE (EXTRACT(EPOCH FROM {0} {2}) * 1000)::bigint END as {1}, "
 				"to_char({0} {2}, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as \"{1}:iso\"", // output: 2018-11-01T15:21:24.000Z
 				// 'utc' non sempre deve essere utilizzato, ad esempio, se il campo date è un timestamp without time zone e viene inserita una data
 				// utc, quando questa data viene recuperata con una select, ritorna già la data utc, la stessa che era stata inserita. In quest'ultimo
