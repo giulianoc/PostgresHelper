@@ -40,7 +40,8 @@ class PostgresHelper
 
 	  public:
 		Base() { _isNull = true; };
-		bool isNull() { return _isNull; };
+		~Base() = default;
+		[[nodiscard]] bool isNull() const { return _isNull; };
 	};
 
 	template <typename T> class SqlType : public Base
@@ -48,11 +49,12 @@ class PostgresHelper
 		T value;
 
 	  public:
-		SqlType(T v)
+		explicit SqlType(T v)
 		{
 			value = v;
 			_isNull = false;
 		};
+		~SqlType() = default;
 		T as() { return value; };
 	};
 
@@ -62,15 +64,16 @@ class PostgresHelper
 
 	  public:
 		SqlValue() = default;
+		~SqlValue() = default;
 
-		void setValue(shared_ptr<Base> value) { this->value = value; };
+		void setValue(const shared_ptr<Base> &val) { this->value = val; };
 
-		bool isNull() { return value->isNull(); };
+		[[nodiscard]] bool isNull() const { return value->isNull(); };
 
-		template <class T> T as(T valueIfNull) { return isNull() ? valueIfNull : ((SqlType<T> *)(value.get()))->as(); };
+		template <class T> T as(T valueIfNull) { return isNull() ? valueIfNull : static_cast<SqlType<T> *>(value.get())->as(); };
 	};
 
-	class SqlResultSet
+	class SqlResultSet final
 	{
 	  public:
 		virtual ~SqlResultSet() = default;
@@ -157,72 +160,6 @@ class PostgresHelper
 		void setSqlDuration(chrono::milliseconds sqlDuration) { _sqlDuration = sqlDuration; }
 		[[nodiscard]] chrono::milliseconds getSqlDuration() const { return _sqlDuration; }
 	};
-
-	/*
-	class SqlResultSetByIndex : public SqlResultSet
-	{
-	  private:
-		vector<SqlValue> _sqlCurrentRowValuesByIndex;
-		// per ogni riga (vector) abbiamo un vettore che contiene i valori delle colonne by Index
-		vector<vector<SqlValue>> _sqlValuesByIndex;
-
-	  public:
-		virtual void clearData()
-		{
-			_sqlValuesByIndex.clear();
-			SqlResultSet::clearData();
-		};
-		virtual void addColumnValueToCurrentRow(string fieldName, SqlValue sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
-		virtual void addCurrentRow()
-		{
-			_sqlValuesByIndex.push_back(_sqlCurrentRowValuesByIndex);
-			_sqlCurrentRowValuesByIndex.clear();
-		};
-		virtual size_t size() { return _sqlValuesByIndex.size(); };
-		virtual json asJson();
-		vector<vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
-		vector<vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
-		vector<vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
-		vector<vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
-		vector<SqlValue> &operator[](int index) { return _sqlValuesByIndex[index]; }
-	};
-
-	class SqlResultSetByName : public SqlResultSet
-	{
-	  private:
-		map<string, SqlValue> _sqlCurrentRowValuesByName;
-		// per ogni riga (vector) abbiamo una mappa che contiene i valori delle colonne by Name
-		vector<map<string, SqlValue>> _sqlValuesByName;
-
-	  public:
-		virtual void clearData()
-		{
-			_sqlValuesByName.clear();
-			SqlResultSet::clearData();
-		};
-		virtual void addColumnValueToCurrentRow(string fieldName, SqlValue sqlValue)
-		{
-			auto it = _sqlCurrentRowValuesByName.find(fieldName);
-			if (it == _sqlCurrentRowValuesByName.end())
-				_sqlCurrentRowValuesByName.insert(make_pair(fieldName, sqlValue));
-			else
-				// se il nome della colonna è già presente, aggiungiamo anche l'indice della colonna
-				_sqlCurrentRowValuesByName.insert(make_pair(fmt::format("{} - {}", fieldName, _sqlCurrentRowValuesByName.size()), sqlValue));
-		};
-		virtual void addCurrentRow()
-		{
-			_sqlValuesByName.push_back(_sqlCurrentRowValuesByName);
-			_sqlCurrentRowValuesByName.clear();
-		};
-		virtual size_t size() { return _sqlValuesByName.size(); };
-		virtual json asJson();
-		vector<map<string, SqlValue>>::iterator begin() { return _sqlValuesByName.begin(); };
-		vector<map<string, SqlValue>>::iterator end() { return _sqlValuesByName.end(); };
-		vector<map<string, SqlValue>>::const_iterator begin() const { return _sqlValuesByName.begin(); };
-		vector<map<string, SqlValue>>::const_iterator end() const { return _sqlValuesByName.end(); };
-		map<string, SqlValue> &operator[](int index) { return _sqlValuesByName[index]; }
-	};
-*/
 
   public:
 	PostgresHelper();

@@ -349,10 +349,10 @@ string PostgresHelper::getQueryColumn(
 	}
 	else if (sqlColumnSchema->dataType.starts_with("timestamp"))
 	{
-		// EPOCH ritorna un float (seconds.milliseconds)
+		// EPOCH ritorna un float (seconds.milliseconds) che potrebbe essere anche +-infinity
 		if (requestedTableNameAlias.empty())
 			queryColumn = std::format(
-				"CASE WHEN {0} = 'infinity' OR {0} = '-infinity' THEN (EXTRACT(EPOCH FROM {0}) * 1000) ELSE (EXTRACT(EPOCH FROM {0} {2}) * 1000)::bigint END as {1}, "
+				"(EXTRACT(EPOCH FROM {0}) * 1000) as {1}, "
 				"to_char({0} {2}, 'YYYY-MM-DD\"T\"HH24:MI:SS.MSZ') as \"{1}:iso\"", // output: 2018-11-01T15:21:24.000Z
 				// 'utc' non sempre deve essere utilizzato, ad esempio, se il campo date è un timestamp without time zone e viene inserita una data
 				// utc, quando questa data viene recuperata con una select, ritorna già la data utc, la stessa che era stata inserita. In quest'ultimo
@@ -533,7 +533,7 @@ json PostgresHelper::SqlResultSet::asJson()
 		for (size_t columnIndex = 0, columnNumber = row.size(); columnIndex < columnNumber; columnIndex++)
 		{
 			string fieldName = _sqlColumnTypeByIndex[columnIndex].first;
-			SqlValue sqlValue = row[columnIndex];
+			const SqlValue& sqlValue = row[columnIndex];
 
 			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
 			if (sqlValue.isNull())
