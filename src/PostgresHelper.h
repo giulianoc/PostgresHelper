@@ -165,7 +165,7 @@ class PostgresHelper
 	PostgresHelper();
 	~PostgresHelper();
 	void loadSqlColumnsSchema(PostgresConnTrans &trans);
-	map<string, shared_ptr<SqlColumnSchema>> getSqlTableSchema(string tableName)
+	map<string, shared_ptr<SqlColumnSchema>> getSqlTableSchema(const string& tableName)
 	{
 		auto it = _sqlTablesColumnsSchema.find(tableName);
 		if (it == _sqlTablesColumnsSchema.end())
@@ -173,7 +173,7 @@ class PostgresHelper
 		return it->second;
 	}
 
-	string getSqlColumnType(string tableName, string columnName)
+	string getSqlColumnType(string tableName, const string& columnName)
 	{
 		map<string, shared_ptr<SqlColumnSchema>> sqlTableSchema = getSqlTableSchema(tableName);
 		auto it = sqlTableSchema.find(columnName);
