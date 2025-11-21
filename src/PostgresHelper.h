@@ -152,6 +152,7 @@ class PostgresHelper
 		SqlValueType type(const string& fieldName);
 		json asJson(const string& fieldName, SqlValue sqlValue);
 		string getColumnNameByIndex(const size_t columnIndex) { return _sqlColumnTypeByIndex[columnIndex].first; };
+		[[nodiscard]] SqlValueType getColumnTypeByIndex(const size_t columnIndex) const { return _sqlColumnTypeByIndex[columnIndex].second; };
 		[[nodiscard]] size_t getColumnIndexByName(const string& columnName) const
 		{
 			for (size_t index = 0, size = _sqlColumnTypeByIndex.size(); index < size; index++)
