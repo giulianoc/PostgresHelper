@@ -70,7 +70,18 @@ class PostgresHelper
 
 		[[nodiscard]] bool isNull() const { return value->isNull(); };
 
-		template <class T> T as(T valueIfNull) { return isNull() ? valueIfNull : static_cast<SqlType<T> *>(value.get())->as(); };
+		template <class T> T as(T valueIfNull)
+		{
+			if (isNull())
+				return valueIfNull;
+			if (dynamic_pointer_cast<SqlType<T> *>(value.get()) == nullptr)
+			{
+				string errorMessage = "SqlValue type mismatch in as<T>()";
+				SPDLOG_ERROR(errorMessage);
+				throw runtime_error(errorMessage);
+			}
+			return static_cast<SqlType<T> *>(value.get())->as();
+		};
 	};
 
 	class SqlResultSet final
