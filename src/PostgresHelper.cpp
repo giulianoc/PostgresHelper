@@ -141,6 +141,10 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 			string fieldName = field.name();
 			SqlResultSet::SqlValueType sqlValueType = SqlResultSet::unknown;
 			{
+				SPDLOG_TRACE("buildResult"
+					", fieldName: {}"
+					", fieldType: {}", fieldName, field.type()
+					);
 				switch (field.type())
 				{
 				case 16: // bool
@@ -219,6 +223,12 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 						break;
 					case SqlResultSet::text:
 						sqlValue.setValue(make_shared<SqlType<string>>(field.as<string>()));
+						SPDLOG_TRACE("buildResult"
+							", fieldName: {}"
+							", fieldType: {}"
+							", fieldValue: {}"
+							, fieldName, field.type(), sqlValue.as(string())
+							);
 						break;
 					case SqlResultSet::vectorBoolean:
 					{
@@ -288,6 +298,12 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 						break;
 					case SqlResultSet::json_:
 						sqlValue.setValue(make_shared<SqlType<json>>(JSONUtils::toJson(field.as<string>())));
+						SPDLOG_TRACE("buildResult"
+							", fieldName: {}"
+							", fieldType: {}"
+							", fieldValue: {}"
+							, fieldName, field.type(), JSONUtils::toString(sqlValue.as(json()))
+							);
 						break;
 					default:
 					{
