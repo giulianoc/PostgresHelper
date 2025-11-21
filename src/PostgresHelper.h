@@ -44,7 +44,7 @@ class PostgresHelper
 		[[nodiscard]] bool isNull() const { return _isNull; };
 	};
 
-	template <typename T> class SqlType : public Base
+	template <typename T> class SqlType final : public Base
 	{
 		T value;
 
@@ -54,7 +54,6 @@ class PostgresHelper
 			value = v;
 			_isNull = false;
 		};
-		~SqlType() = default;
 		T as() { return value; };
 	};
 
