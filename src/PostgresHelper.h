@@ -40,7 +40,7 @@ class PostgresHelper
 
 	  public:
 		Base() { _isNull = true; };
-		~Base() = default;
+		virtual ~Base() = default;
 		[[nodiscard]] bool isNull() const { return _isNull; };
 	};
 
@@ -74,13 +74,15 @@ class PostgresHelper
 		{
 			if (isNull())
 				return valueIfNull;
-			if (dynamic_pointer_cast<SqlType<T> *>(value.get()) == nullptr)
+			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
+
+			if (!valued)
 			{
-				string errorMessage = "SqlValue type mismatch in as<T>()";
+				const string errorMessage = "SqlValue type mismatch in as<T>()";
 				SPDLOG_ERROR(errorMessage);
 				throw runtime_error(errorMessage);
 			}
-			return static_cast<SqlType<T> *>(value.get())->as();
+			return valued->as();
 		};
 	};
 
