@@ -159,7 +159,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 				case 20: // int8
 					sqlValueType = SqlResultSet::int64;
 					break;
-				case 21: // int2
+				case 21: // int2 (smallint)
 					sqlValueType = SqlResultSet::int16;
 					break;
 				case 23: // int4
