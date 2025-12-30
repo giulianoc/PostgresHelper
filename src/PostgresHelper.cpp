@@ -297,7 +297,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 						sqlValue.setValue(make_shared<SqlType<double>>(field.as<double>()));
 						break;
 					case SqlResultSet::json_:
-						sqlValue.setValue(make_shared<SqlType<json>>(JSONUtils::toJson(field.as<string>())));
+						sqlValue.setValue(make_shared<SqlType<json>>(JSONUtils::toJson<json>(field.as<string>())));
 						SPDLOG_TRACE("buildResult"
 							", fieldName: {}"
 							", fieldType: {}"
