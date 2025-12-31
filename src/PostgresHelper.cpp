@@ -6,6 +6,10 @@
 #include <string>
 #include <utility>
 
+using namespace std;
+using json = nlohmann::json;
+using ordered_json = nlohmann::ordered_json;
+
 PostgresHelper::PostgresHelper() = default;
 PostgresHelper::~PostgresHelper() = default;
 
@@ -127,7 +131,7 @@ string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns,
 	return queryColumns;
 }
 
-shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const result& result)
+shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx::result& result)
 {
 	shared_ptr<SqlResultSet> sqlResultSet = make_shared<PostgresHelper::SqlResultSet>();
 
@@ -240,13 +244,13 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 							v.push_back(array[index]);
 						*/
 						auto array = field.as_array();
-						pair<array_parser::juncture, string> elem;
+						pair<pqxx::array_parser::juncture, string> elem;
 						do
 						{
 							elem = array.get_next();
-							if (elem.first == array_parser::juncture::string_value)
+							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second == "t");
-						} while (elem.first != array_parser::juncture::done);
+						} while (elem.first != pqxx::array_parser::juncture::done);
 
 						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
 					}
@@ -261,13 +265,13 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 							v.push_back(array[index]);
 						*/
 						auto array = field.as_array();
-						pair<array_parser::juncture, string> elem;
+						pair<pqxx::array_parser::juncture, string> elem;
 						do
 						{
 							elem = array.get_next();
-							if (elem.first == array_parser::juncture::string_value)
+							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(stol(elem.second));
-						} while (elem.first != array_parser::juncture::done);
+						} while (elem.first != pqxx::array_parser::juncture::done);
 
 						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
 					}
@@ -282,13 +286,13 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const resul
 							v.push_back(array[index]);
 						*/
 						auto array = field.as_array();
-						pair<array_parser::juncture, string> elem;
+						pair<pqxx::array_parser::juncture, string> elem;
 						do
 						{
 							elem = array.get_next();
-							if (elem.first == array_parser::juncture::string_value)
+							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second);
-						} while (elem.first != array_parser::juncture::done);
+						} while (elem.first != pqxx::array_parser::juncture::done);
 
 						sqlValue.setValue(make_shared<SqlType<vector<string>>>(v));
 					}
@@ -585,7 +589,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 								  "from information_schema.columns where table_schema = 'public' "
 								  "order by table_name, column_name ";
 			chrono::system_clock::time_point startSql = chrono::system_clock::now();
-			result result = trans.transaction->exec(sqlStatement);
+			pqxx::result result = trans.transaction->exec(sqlStatement);
 			SPDLOG_DEBUG(
 				"SQL statement"
 				", sqlStatement: @{}@"
@@ -659,7 +663,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 	}
 	catch (exception const &e)
 	{
-		sql_error const *se = dynamic_cast<sql_error const *>(&e);
+		auto const *se = dynamic_cast<pqxx::sql_error const *>(&e);
 		if (se != nullptr)
 			try
 			{

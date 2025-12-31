@@ -16,7 +16,7 @@ class PostgresHelper
   public:
 	struct SqlColumnSchema
 	{
-		SqlColumnSchema(string tableName, string columnName, bool nullable, string dataType, string arrayDataType)
+		SqlColumnSchema(std::string tableName, std::string columnName, bool nullable, std::string dataType, std::string arrayDataType)
 		{
 			this->tableName = std::move(tableName);
 			this->columnName = std::move(columnName);
@@ -25,11 +25,11 @@ class PostgresHelper
 			this->arrayDataType = std::move(arrayDataType);
 		}
 
-		string tableName;
-		string columnName;
+		std::string tableName;
+		std::string columnName;
 		bool nullable;
-		string dataType;
-		string arrayDataType;
+		std::string dataType;
+		std::string arrayDataType;
 	};
 
   public:
@@ -59,13 +59,13 @@ class PostgresHelper
 
 	class SqlValue
 	{
-		shared_ptr<Base> value;
+		std::shared_ptr<Base> value;
 
 	  public:
 		SqlValue() = default;
 		~SqlValue() = default;
 
-		void setValue(const shared_ptr<Base> &val) { this->value = val; };
+		void setValue(const std::shared_ptr<Base> &val) { this->value = val; };
 
 		[[nodiscard]] bool isNull() const { return value->isNull(); };
 
@@ -77,9 +77,9 @@ class PostgresHelper
 
 			if (!valued)
 			{
-				const string errorMessage = "SqlValue type mismatch in as<T>()";
+				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
 				SPDLOG_ERROR(errorMessage);
-				throw runtime_error(errorMessage);
+				throw std::runtime_error(errorMessage);
 			}
 			return valued->as();
 		};
@@ -108,18 +108,18 @@ class PostgresHelper
 
 	  private:
 		// column Name / type
-		vector<pair<string, SqlValueType>> _sqlColumnTypeByIndex;
-		map<string, SqlValueType> _sqlColumnTypeByName;
+		std::vector<std::pair<std::string, SqlValueType>> _sqlColumnTypeByIndex;
+		std::map<std::string, SqlValueType> _sqlColumnTypeByName;
 
-		// per ogni riga (vector) abbiamo un vettore che contiene i valori delle colonne by Index
-		vector<vector<SqlValue>> _sqlValuesByIndex;
+		// per ogni riga (std::vector) abbiamo un vettore che contiene i valori delle colonne by Index
+		std::vector<std::vector<SqlValue>> _sqlValuesByIndex;
 
 		int32_t _count = 0;
-		chrono::milliseconds _countSqlDuration = {};
-		chrono::milliseconds _sqlDuration = {};
+		std::chrono::milliseconds _countSqlDuration = {};
+		std::chrono::milliseconds _sqlDuration = {};
 
-		// temporary vector to fill _sqlValuesByIndex
-		vector<SqlValue> _sqlCurrentRowValuesByIndex;
+		// temporary std::vector to fill _sqlValuesByIndex
+		std::vector<SqlValue> _sqlCurrentRowValuesByIndex;
 
 	  public:
 		virtual void clearData()
@@ -128,7 +128,7 @@ class PostgresHelper
 			_sqlColumnTypeByName.clear();
 			_sqlValuesByIndex.clear();
 		};
-		virtual void addColumnValueToCurrentRow(const string& fieldName, const SqlValue& sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
+		virtual void addColumnValueToCurrentRow(const std::string& fieldName, const SqlValue& sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
 		virtual void addCurrentRow()
 		{
 			_sqlValuesByIndex.push_back(_sqlCurrentRowValuesByIndex);
@@ -136,8 +136,8 @@ class PostgresHelper
 		};
 		virtual size_t size() { return _sqlValuesByIndex.size(); };
 		virtual bool empty() { return _sqlValuesByIndex.empty(); };
-		virtual json asJson();
-		void addColumnType(string fieldName, SqlValueType sqlValueType)
+		virtual nlohmann::json asJson();
+		void addColumnType(std::string fieldName, SqlValueType sqlValueType)
 		{
 			auto it = _sqlColumnTypeByName.find(fieldName);
 			if (it == _sqlColumnTypeByName.end())
@@ -149,65 +149,65 @@ class PostgresHelper
 
 			_sqlColumnTypeByIndex.emplace_back(fieldName, sqlValueType);
 		};
-		SqlValueType type(const string& fieldName);
-		json asJson(const string& fieldName, SqlValue sqlValue);
-		string getColumnNameByIndex(const size_t columnIndex) { return _sqlColumnTypeByIndex[columnIndex].first; };
+		SqlValueType type(const std::string& fieldName);
+		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
+		std::string getColumnNameByIndex(const size_t columnIndex) { return _sqlColumnTypeByIndex[columnIndex].first; };
 		[[nodiscard]] SqlValueType getColumnTypeByIndex(const size_t columnIndex) const { return _sqlColumnTypeByIndex[columnIndex].second; };
-		[[nodiscard]] size_t getColumnIndexByName(const string& columnName) const
+		[[nodiscard]] size_t getColumnIndexByName(const std::string& columnName) const
 		{
 			for (size_t index = 0, size = _sqlColumnTypeByIndex.size(); index < size; index++)
 				if (_sqlColumnTypeByIndex[index].first == columnName)
 					return index;
 			return -1;
 		};
-		vector<vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
-		vector<vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
-		[[nodiscard]] vector<vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
-		[[nodiscard]] vector<vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
-		vector<SqlValue> &operator[](int index) { return _sqlValuesByIndex[index]; }
+		std::vector<std::vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
+		std::vector<std::vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
+		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
+		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
+		std::vector<SqlValue> &operator[](int index) { return _sqlValuesByIndex[index]; }
 
 		void setCount(int32_t count) { _count = count; }
 		[[nodiscard]] int32_t getCount() const { return _count; }
-		void setCountSqlDuration(chrono::milliseconds countSqlDuration) { _countSqlDuration = countSqlDuration; }
-		[[nodiscard]] chrono::milliseconds getCountSqlDuration() const { return _countSqlDuration; }
-		void setSqlDuration(chrono::milliseconds sqlDuration) { _sqlDuration = sqlDuration; }
-		[[nodiscard]] chrono::milliseconds getSqlDuration() const { return _sqlDuration; }
+		void setCountSqlDuration(std::chrono::milliseconds countSqlDuration) { _countSqlDuration = countSqlDuration; }
+		[[nodiscard]] std::chrono::milliseconds getCountSqlDuration() const { return _countSqlDuration; }
+		void setSqlDuration(std::chrono::milliseconds sqlDuration) { _sqlDuration = sqlDuration; }
+		[[nodiscard]] std::chrono::milliseconds getSqlDuration() const { return _sqlDuration; }
 	};
 
   public:
 	PostgresHelper();
 	~PostgresHelper();
 	void loadSqlColumnsSchema(PostgresConnTrans &trans);
-	map<string, shared_ptr<SqlColumnSchema>> getSqlTableSchema(const string& tableName)
+	std::map<std::string, std::shared_ptr<SqlColumnSchema>> getSqlTableSchema(const std::string& tableName)
 	{
 		auto it = _sqlTablesColumnsSchema.find(tableName);
 		if (it == _sqlTablesColumnsSchema.end())
-			throw runtime_error(std::format("table {} not found", tableName));
+			throw std::runtime_error(std::format("table {} not found", tableName));
 		return it->second;
 	}
 
-	string getSqlColumnType(string tableName, const string& columnName)
+	std::string getSqlColumnType(std::string tableName, const std::string& columnName)
 	{
-		map<string, shared_ptr<SqlColumnSchema>> sqlTableSchema = getSqlTableSchema(tableName);
+		std::map<std::string, std::shared_ptr<SqlColumnSchema>> sqlTableSchema = getSqlTableSchema(tableName);
 		auto it = sqlTableSchema.find(columnName);
 		if (it == sqlTableSchema.end())
-			throw runtime_error(std::format("column {}.{} not found", tableName, columnName));
+			throw std::runtime_error(std::format("column {}.{} not found", tableName, columnName));
 
-		shared_ptr<SqlColumnSchema> sqlColumnSchema = it->second;
+		std::shared_ptr<SqlColumnSchema> sqlColumnSchema = it->second;
 
 		return sqlColumnSchema->dataType;
 	}
 
-	string buildQueryColumns(const vector<string> &requestedColumns, bool convertDateFieldsToUtc = false);
-	static shared_ptr<PostgresHelper::SqlResultSet> buildResult(const result &result);
+	std::string buildQueryColumns(const std::vector<std::string> &requestedColumns, bool convertDateFieldsToUtc = false);
+	static std::shared_ptr<PostgresHelper::SqlResultSet> buildResult(const pqxx::result &result);
 
   private:
-	map<string, map<string, shared_ptr<SqlColumnSchema>>> _sqlTablesColumnsSchema;
+	std::map<std::string, std::map<std::string, std::shared_ptr<SqlColumnSchema>>> _sqlTablesColumnsSchema;
 
-	static string getQueryColumn(
-		const shared_ptr<SqlColumnSchema> &sqlColumnSchema, const string &requestedTableNameAlias, const string &requestedColumnName = "",
+	static std::string getQueryColumn(
+		const std::shared_ptr<SqlColumnSchema> &sqlColumnSchema, const std::string &requestedTableNameAlias, const std::string &requestedColumnName = "",
 		bool convertDateFieldsToUtc = false
 	);
-	static string getColumnName(const shared_ptr<SqlColumnSchema> &sqlColumnSchema, const string &requestedTableNameAlias, string requestedColumnName);
-	static bool isDataTypeManaged(const string &dataType, const string &arrayDataType);
+	static std::string getColumnName(const std::shared_ptr<SqlColumnSchema> &sqlColumnSchema, const std::string &requestedTableNameAlias, std::string requestedColumnName);
+	static bool isDataTypeManaged(const std::string &dataType, const std::string &arrayDataType);
 };
