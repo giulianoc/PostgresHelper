@@ -69,7 +69,7 @@ class PostgresHelper
 
 		[[nodiscard]] bool isNull() const { return value->isNull(); };
 
-		template <class T> T as(T valueIfNull)
+		template <class T> T as(T valueIfNull = {})
 		{
 			if (isNull())
 				return valueIfNull;
@@ -164,7 +164,7 @@ class PostgresHelper
 		std::vector<std::vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
 		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
 		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
-		std::vector<SqlValue> &operator[](int index) { return _sqlValuesByIndex[index]; }
+		std::vector<SqlValue> &operator[](const int index) { return _sqlValuesByIndex[index]; }
 
 		void setCount(int32_t count) { _count = count; }
 		[[nodiscard]] int32_t getCount() const { return _count; }
