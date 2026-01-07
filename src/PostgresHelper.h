@@ -6,6 +6,8 @@
 #include <memory>
 // #define DBCONNECTIONPOOL_LOG
 // #define DBCONNECTIONPOOL_STATS_LOG
+#include "StringUtils.h"
+
 #include <JSONUtils.h>
 #include <PostgresConnection.h>
 #include <string>
@@ -153,11 +155,21 @@ class PostgresHelper
 		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
 		std::string getColumnNameByIndex(const size_t columnIndex) { return _sqlColumnTypeByIndex[columnIndex].first; };
 		[[nodiscard]] SqlValueType getColumnTypeByIndex(const size_t columnIndex) const { return _sqlColumnTypeByIndex[columnIndex].second; };
-		[[nodiscard]] size_t getColumnIndexByName(const std::string& columnName) const
+		[[nodiscard]] size_t getColumnIndexByName(const std::string& columnName, const bool caseSensitive = false) const
 		{
 			for (size_t index = 0, size = _sqlColumnTypeByIndex.size(); index < size; index++)
-				if (_sqlColumnTypeByIndex[index].first == columnName)
-					return index;
+			{
+				if (caseSensitive)
+				{
+					if (_sqlColumnTypeByIndex[index].first == columnName)
+						return index;
+				}
+				else
+				{
+					if (StringUtils::lowerCase(_sqlColumnTypeByIndex[index].first) == StringUtils::lowerCase(columnName))
+						return index;
+				}
+			}
 			return -1;
 		};
 		std::vector<std::vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
