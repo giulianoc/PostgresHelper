@@ -158,16 +158,42 @@ class PostgresHelper
 		{
 			auto it = _sqlColumnInfoByName.find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
 			if (it == _sqlColumnInfoByName.end())
-				return unknown;
+			{
+				const std::string errorMessage = std::format("Column name not found: {}", columnName);
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
 			return it->second.second;
 		}
-		[[nodiscard]] SqlValueType columnType(const size_t columnIndex) const { return _sqlColumnInfoByIndex[columnIndex].second; };
-		std::string columnName(const size_t columnIndex) { return _sqlColumnInfoByIndex[columnIndex].first; };
+		[[nodiscard]] SqlValueType columnType(const size_t columnIndex) const
+		{
+			if (columnIndex >= _sqlColumnInfoByIndex.size())
+			{
+				const std::string errorMessage = std::format("Wrong column index: {}", columnIndex);
+				SPDLOG_ERROR(errorMessage);
+				throw std::out_of_range(errorMessage);
+			}
+			return _sqlColumnInfoByIndex[columnIndex].second;
+		};
+		std::string columnName(const size_t columnIndex)
+		{
+			if (columnIndex >= _sqlColumnInfoByIndex.size())
+			{
+				const std::string errorMessage = std::format("Wrong column index: {}", columnIndex);
+				SPDLOG_ERROR(errorMessage);
+				throw std::out_of_range(errorMessage);
+			}
+			return _sqlColumnInfoByIndex[columnIndex].first;
+		};
 		[[nodiscard]] size_t columnIndex(const std::string& columnName, const bool caseSensitive = false) const
 		{
 			auto it = _sqlColumnInfoByName.find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
 			if (it == _sqlColumnInfoByName.end())
-				return -1;
+			{
+				const std::string errorMessage = std::format("Column name not found: {}", columnName);
+				SPDLOG_ERROR(errorMessage);
+				throw std::out_of_range(errorMessage);
+			}
 			return it->second.first;
 		}
 		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
@@ -175,7 +201,16 @@ class PostgresHelper
 		std::vector<std::vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
 		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
 		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
-		std::vector<SqlValue> &operator[](const int index) { return _sqlValuesByIndex[index]; }
+		std::vector<SqlValue> &operator[](const int index)
+		{
+			if (index >= _sqlValuesByIndex.size())
+			{
+				const std::string errorMessage = std::format("Wrong index: {}", index);
+				SPDLOG_ERROR(errorMessage);
+				throw std::out_of_range(errorMessage);
+			}
+			return _sqlValuesByIndex[index];
+		}
 
 		void setCount(int32_t count) { _count = count; }
 		[[nodiscard]] int32_t getCount() const { return _count; }
