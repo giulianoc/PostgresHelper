@@ -488,7 +488,7 @@ json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlV
 		root = nullptr;
 	else
 	{
-		switch (type(fieldName))
+		switch (columnType(fieldName))
 		{
 		case int16:
 			root = sqlValue.as<int16_t>(-1);
@@ -551,7 +551,7 @@ json PostgresHelper::SqlResultSet::asJson()
 		// for (auto sqlValue : row)
 		for (size_t columnIndex = 0, columnNumber = row.size(); columnIndex < columnNumber; columnIndex++)
 		{
-			string fieldName = _sqlColumnTypeByIndex[columnIndex].first;
+			string fieldName = _sqlColumnInfoByIndex[columnIndex].first;
 			const SqlValue& sqlValue = row[columnIndex];
 
 			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
@@ -563,15 +563,6 @@ json PostgresHelper::SqlResultSet::asJson()
 		jsonRoot.push_back(rowRoot);
 	}
 	return jsonRoot;
-}
-
-PostgresHelper::SqlResultSet::SqlValueType PostgresHelper::SqlResultSet::type(const string& fieldName)
-{
-	auto it = _sqlColumnTypeByName.find(fieldName);
-	if (it == _sqlColumnTypeByName.end())
-		return unknown;
-	else
-		return it->second;
 }
 
 void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)

@@ -109,9 +109,10 @@ class PostgresHelper
 		};
 
 	  private:
-		// column Name / type
-		std::vector<std::pair<std::string, SqlValueType>> _sqlColumnTypeByIndex;
-		std::map<std::string, SqlValueType> _sqlColumnTypeByName;
+		// column Name / type per un accesso by Column Index
+		std::vector<std::pair<std::string, SqlValueType>> _sqlColumnInfoByIndex;
+		// type per un accesso by Column Name
+		std::map<std::string, std::pair<size_t, SqlValueType>> _sqlColumnInfoByName;
 
 		// per ogni riga (std::vector) abbiamo un vettore che contiene i valori delle colonne by Index
 		std::vector<std::vector<SqlValue>> _sqlValuesByIndex;
@@ -126,8 +127,8 @@ class PostgresHelper
 	  public:
 		virtual void clearData()
 		{
-			_sqlColumnTypeByIndex.clear();
-			_sqlColumnTypeByName.clear();
+			_sqlColumnInfoByIndex.clear();
+			_sqlColumnInfoByName.clear();
 			_sqlValuesByIndex.clear();
 		};
 		virtual void addColumnValueToCurrentRow(const std::string& fieldName, const SqlValue& sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
@@ -141,37 +142,35 @@ class PostgresHelper
 		virtual nlohmann::json asJson();
 		void addColumnType(std::string fieldName, SqlValueType sqlValueType)
 		{
-			auto it = _sqlColumnTypeByName.find(fieldName);
-			if (it == _sqlColumnTypeByName.end())
-				_sqlColumnTypeByName.insert(make_pair(fieldName, sqlValueType));
+			size_t newColumnIndex = _sqlColumnInfoByIndex.size();
+			auto it = _sqlColumnInfoByName.find(fieldName);
+			if (it == _sqlColumnInfoByName.end())
+				_sqlColumnInfoByName.insert(make_pair(fieldName, std::make_pair(newColumnIndex, sqlValueType)));
 			else
 				// se il nome della colonna è già presente, aggiungiamo anche l'indice della colonna
-				_sqlColumnTypeByName.insert(make_pair(fmt::format("{} - {}", fieldName, _sqlColumnTypeByIndex.size()), sqlValueType));
-			_sqlColumnTypeByName.insert(make_pair(fieldName, sqlValueType));
+				_sqlColumnInfoByName.insert(make_pair(fmt::format("{} - {}", fieldName, newColumnIndex),
+					std::make_pair(newColumnIndex, sqlValueType)));
+			// _sqlColumnInfoByName.insert(make_pair(fieldName, sqlValueType));
 
-			_sqlColumnTypeByIndex.emplace_back(fieldName, sqlValueType);
+			_sqlColumnInfoByIndex.emplace_back(fieldName, sqlValueType);
 		};
-		SqlValueType type(const std::string& fieldName);
-		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
-		std::string getColumnNameByIndex(const size_t columnIndex) { return _sqlColumnTypeByIndex[columnIndex].first; };
-		[[nodiscard]] SqlValueType getColumnTypeByIndex(const size_t columnIndex) const { return _sqlColumnTypeByIndex[columnIndex].second; };
-		[[nodiscard]] size_t getColumnIndexByName(const std::string& columnName, const bool caseSensitive = false) const
+		SqlValueType columnType(const std::string& columnName, const bool caseSensitive = false)
 		{
-			for (size_t index = 0, size = _sqlColumnTypeByIndex.size(); index < size; index++)
-			{
-				if (caseSensitive)
-				{
-					if (_sqlColumnTypeByIndex[index].first == columnName)
-						return index;
-				}
-				else
-				{
-					if (StringUtils::lowerCase(_sqlColumnTypeByIndex[index].first) == StringUtils::lowerCase(columnName))
-						return index;
-				}
-			}
-			return -1;
-		};
+			auto it = _sqlColumnInfoByName.find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
+			if (it == _sqlColumnInfoByName.end())
+				return unknown;
+			return it->second.second;
+		}
+		[[nodiscard]] SqlValueType columnType(const size_t columnIndex) const { return _sqlColumnInfoByIndex[columnIndex].second; };
+		std::string columnName(const size_t columnIndex) { return _sqlColumnInfoByIndex[columnIndex].first; };
+		[[nodiscard]] size_t columnIndex(const std::string& columnName, const bool caseSensitive = false) const
+		{
+			auto it = _sqlColumnInfoByName.find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
+			if (it == _sqlColumnInfoByName.end())
+				return -1;
+			return it->second.first;
+		}
+		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
 		std::vector<std::vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
 		std::vector<std::vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
 		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
