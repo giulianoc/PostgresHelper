@@ -85,6 +85,20 @@ class PostgresHelper
 			}
 			return valued->as();
 		};
+		template <class T> std::optional<T> asOpt()
+		{
+			if (isNull())
+				return std::nullopt;
+			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
+
+			if (!valued)
+			{
+				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			return valued->as();
+		};
 	};
 
 	class SqlResultSet final
