@@ -122,7 +122,40 @@ class PostgresHelper
 			vectorBoolean
 		};
 
-	  private:
+		/*
+		class SqlRow
+		{
+		public:
+			explicit SqlRow(std::map<std::string, std::pair<size_t, SqlValueType>> *sqlColumnInfoByName)
+				: _sqlColumnInfoByName(sqlColumnInfoByName), std::vector<SqlValue>()
+			{
+			};
+			~SqlRow() = default;
+
+			SqlValue &operator[](const std::string& columnName)
+			{
+				return get(columnName);
+			}
+			SqlValue &get(const std::string& columnName, const bool caseSensitive = false)
+			{
+				const auto it = _sqlColumnInfoByName->find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
+				if (it == _sqlColumnInfoByName->end())
+				{
+					const std::string errorMessage = std::format("Column name not found: {}", columnName);
+					SPDLOG_ERROR(errorMessage);
+					throw std::out_of_range(errorMessage);
+				}
+				
+				return dynamic_cast<std::vector<SqlValue>(*this)[it->second.first];
+			}
+		private:
+			std::vector<SqlValue>;
+			// type per un accesso by Column Name
+			std::map<std::string, std::pair<size_t, SqlValueType>> *_sqlColumnInfoByName{};
+		};
+		*/
+
+	private:
 		// column Name / type per un accesso by Column Index
 		std::vector<std::pair<std::string, SqlValueType>> _sqlColumnInfoByIndex;
 		// type per un accesso by Column Name
