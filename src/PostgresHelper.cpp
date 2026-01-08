@@ -132,12 +132,14 @@ string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns,
 
 shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx::result& result)
 {
-	shared_ptr<SqlResultSet> sqlResultSet = make_shared<PostgresHelper::SqlResultSet>();
+	auto sqlResultSet = make_shared<SqlResultSet>();
 
 	sqlResultSet->clearData();
 	int rowIndex = 0;
 	for (auto row : result)
 	{
+		SqlResultSet::SqlRow sqlCurrentRow = sqlResultSet->buildSqlRow();
+
 		int columnIndex = 0;
 		for (auto field : row)
 		{
@@ -237,11 +239,10 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<bool> v;
 
+						auto arr = field.as_sql_array<bool>();
+						for (int index = 0; index < arr.size(); index++)
+							v.push_back(arr[index]);
 						/*
-						auto const array{field.as_sql_array<bool>()};
-						for (int index = 0; index < array.size(); index++)
-							v.push_back(array[index]);
-						*/
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -250,6 +251,8 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second == "t");
 						} while (elem.first != pqxx::array_parser::juncture::done);
+						*/
+
 
 						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
 					}
@@ -258,11 +261,10 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<int32_t> v;
 
+						auto const arr = field.as_sql_array<int32_t>();
+						for (int index = 0; index < arr.size(); index++)
+							v.push_back(arr[index]);
 						/*
-						auto const array{field.as_sql_array<int32_t>()};
-						for (int index = 0; index < array.size(); index++)
-							v.push_back(array[index]);
-						*/
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -271,6 +273,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(stol(elem.second));
 						} while (elem.first != pqxx::array_parser::juncture::done);
+						*/
 
 						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
 					}
@@ -327,11 +330,11 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 			if (rowIndex == 0)
 				sqlResultSet->addColumnType(fieldName, sqlValueType);
 
-			sqlResultSet->addColumnValueToCurrentRow(fieldName, sqlValue);
+			sqlCurrentRow.add(sqlValue);
 			columnIndex++;
 		}
 
-		sqlResultSet->addCurrentRow();
+		sqlResultSet->addRow(sqlCurrentRow);
 		rowIndex++;
 	}
 
@@ -551,21 +554,20 @@ json PostgresHelper::SqlResultSet::asJson()
 {
 	json jsonRoot = json::array();
 
-	for (auto row : _sqlValuesByIndex)
+	for (auto& row : _sqlValuesByIndex)
 	{
 		json rowRoot;
 
-		// for (auto sqlValue : row)
-		for (size_t columnIndex = 0, columnNumber = row.size(); columnIndex < columnNumber; columnIndex++)
+		for (int columnIndex = 0; auto& sqlValue : *row)
 		{
-			string fieldName = _sqlColumnInfoByIndex[columnIndex].first;
-			const SqlValue& sqlValue = row[columnIndex];
+			string fieldName= row.info(columnIndex).first;
 
 			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
 			if (sqlValue.isNull())
 				rowRoot[jsonKey] = nullptr;
 			else
 				rowRoot[jsonKey] = SqlResultSet::asJson(fieldName, sqlValue);
+			columnIndex++;
 		}
 		jsonRoot.push_back(rowRoot);
 	}

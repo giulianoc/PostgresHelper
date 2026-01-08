@@ -104,7 +104,8 @@ class PostgresHelper
 	class SqlResultSet final
 	{
 	  public:
-		virtual ~SqlResultSet() = default;
+		SqlResultSet() = default;
+		~SqlResultSet() = default;
 		enum SqlValueType
 		{
 			unknown,
@@ -122,21 +123,23 @@ class PostgresHelper
 			vectorBoolean
 		};
 
-		/*
 		class SqlRow
 		{
+			friend class SqlResultSet;
+
 		public:
-			explicit SqlRow(std::map<std::string, std::pair<size_t, SqlValueType>> *sqlColumnInfoByName)
-				: _sqlColumnInfoByName(sqlColumnInfoByName), std::vector<SqlValue>()
+			explicit SqlRow(std::vector<std::pair<std::string, SqlValueType>> *sqlColumnInfoByIndex,
+				std::map<std::string, std::pair<size_t, SqlValueType>> *sqlColumnInfoByName
+				)
+				: _sqlColumnInfoByIndex(sqlColumnInfoByIndex), _sqlColumnInfoByName(sqlColumnInfoByName)
 			{
 			};
 			~SqlRow() = default;
 
-			SqlValue &operator[](const std::string& columnName)
-			{
-				return get(columnName);
-			}
-			SqlValue &get(const std::string& columnName, const bool caseSensitive = false)
+			void add(const SqlValue& sqlValue) { _sqlRow.push_back(sqlValue); }
+
+			std::vector<SqlValue> &operator*() { return _sqlRow; }
+			[[nodiscard]] std::pair<size_t, SqlValueType> & info(const std::string& columnName, const bool caseSensitive = false) const
 			{
 				const auto it = _sqlColumnInfoByName->find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
 				if (it == _sqlColumnInfoByName->end())
@@ -145,15 +148,43 @@ class PostgresHelper
 					SPDLOG_ERROR(errorMessage);
 					throw std::out_of_range(errorMessage);
 				}
-				
-				return dynamic_cast<std::vector<SqlValue>(*this)[it->second.first];
+				return it->second;
+			}
+			[[nodiscard]] std::pair<std::string, SqlValueType> & info(const size_t columnIndex) const
+			{
+				if (columnIndex >= _sqlColumnInfoByIndex->size())
+				{
+					const std::string errorMessage = std::format("Wrong column index: {}", columnIndex);
+					SPDLOG_ERROR(errorMessage);
+					throw std::out_of_range(errorMessage);
+				}
+				return _sqlColumnInfoByIndex->at(columnIndex);
+			}
+			SqlValue &operator[](const size_t columnIndex)
+			{
+				if (columnIndex >= _sqlRow.size())
+				{
+					const std::string errorMessage = std::format("Wrong index: {}", columnIndex);
+					SPDLOG_ERROR(errorMessage);
+					throw std::out_of_range(errorMessage);
+				}
+				return _sqlRow[columnIndex];
+			}
+			SqlValue &operator[](const std::string& columnName)
+			{
+				return get(columnName);
+			}
+			SqlValue &get(const std::string& columnName, const bool caseSensitive = false)
+			{
+				return _sqlRow.at(info(columnName, caseSensitive).first);
 			}
 		private:
-			std::vector<SqlValue>;
+			std::vector<SqlValue> _sqlRow;
+			// column Name / type per un accesso by Column Index
+			std::vector<std::pair<std::string, SqlValueType>> *_sqlColumnInfoByIndex{};
 			// type per un accesso by Column Name
 			std::map<std::string, std::pair<size_t, SqlValueType>> *_sqlColumnInfoByName{};
 		};
-		*/
 
 	private:
 		// column Name / type per un accesso by Column Index
@@ -162,31 +193,26 @@ class PostgresHelper
 		std::map<std::string, std::pair<size_t, SqlValueType>> _sqlColumnInfoByName;
 
 		// per ogni riga (std::vector) abbiamo un vettore che contiene i valori delle colonne by Index
-		std::vector<std::vector<SqlValue>> _sqlValuesByIndex;
+		// std::vector<std::vector<SqlValue>> _sqlValuesByIndex;
+		std::vector<SqlRow> _sqlValuesByIndex;
 
 		int32_t _count = 0;
 		std::chrono::milliseconds _countSqlDuration = {};
 		std::chrono::milliseconds _sqlDuration = {};
 
-		// temporary std::vector to fill _sqlValuesByIndex
-		std::vector<SqlValue> _sqlCurrentRowValuesByIndex;
-
 	  public:
-		virtual void clearData()
+		SqlRow buildSqlRow() { return SqlRow(&_sqlColumnInfoByIndex, &_sqlColumnInfoByName); };
+		void clearData()
 		{
 			_sqlColumnInfoByIndex.clear();
 			_sqlColumnInfoByName.clear();
 			_sqlValuesByIndex.clear();
 		};
-		virtual void addColumnValueToCurrentRow(const std::string& fieldName, const SqlValue& sqlValue) { _sqlCurrentRowValuesByIndex.push_back(sqlValue); };
-		virtual void addCurrentRow()
-		{
-			_sqlValuesByIndex.push_back(_sqlCurrentRowValuesByIndex);
-			_sqlCurrentRowValuesByIndex.clear();
-		};
-		virtual size_t size() { return _sqlValuesByIndex.size(); };
-		virtual bool empty() { return _sqlValuesByIndex.empty(); };
-		virtual nlohmann::json asJson();
+		void addRow(const SqlRow& sqlRow) { _sqlValuesByIndex.push_back(sqlRow); };
+
+		[[nodiscard]] size_t size() const { return _sqlValuesByIndex.size(); };
+		[[nodiscard]] bool empty() const { return _sqlValuesByIndex.empty(); };
+		nlohmann::json asJson();
 		void addColumnType(std::string fieldName, SqlValueType sqlValueType)
 		{
 			size_t newColumnIndex = _sqlColumnInfoByIndex.size();
@@ -244,11 +270,11 @@ class PostgresHelper
 			return it->second.first;
 		}
 		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
-		std::vector<std::vector<SqlValue>>::iterator begin() { return _sqlValuesByIndex.begin(); };
-		std::vector<std::vector<SqlValue>>::iterator end() { return _sqlValuesByIndex.end(); };
-		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
-		[[nodiscard]] std::vector<std::vector<SqlValue>>::const_iterator end() const { return _sqlValuesByIndex.end(); };
-		std::vector<SqlValue> &operator[](const int index)
+		std::vector<SqlRow>::iterator begin() { return _sqlValuesByIndex.begin(); };
+		std::vector<SqlRow>::iterator end() { return _sqlValuesByIndex.end(); };
+		[[nodiscard]] std::vector<SqlRow>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
+		[[nodiscard]] std::vector<SqlRow>::const_iterator end() const { return _sqlValuesByIndex.end(); };
+		SqlRow &operator[](const int index)
 		{
 			if (index >= _sqlValuesByIndex.size())
 			{
@@ -273,7 +299,7 @@ class PostgresHelper
 	void loadSqlColumnsSchema(PostgresConnTrans &trans);
 	std::map<std::string, std::shared_ptr<SqlColumnSchema>> getSqlTableSchema(const std::string& tableName)
 	{
-		auto it = _sqlTablesColumnsSchema.find(tableName);
+		const auto it = _sqlTablesColumnsSchema.find(tableName);
 		if (it == _sqlTablesColumnsSchema.end())
 			throw std::runtime_error(std::format("table {} not found", tableName));
 		return it->second;
@@ -282,7 +308,7 @@ class PostgresHelper
 	std::string getSqlColumnType(std::string tableName, const std::string& columnName)
 	{
 		std::map<std::string, std::shared_ptr<SqlColumnSchema>> sqlTableSchema = getSqlTableSchema(tableName);
-		auto it = sqlTableSchema.find(columnName);
+		const auto it = sqlTableSchema.find(columnName);
 		if (it == sqlTableSchema.end())
 			throw std::runtime_error(std::format("column {}.{} not found", tableName, columnName));
 
@@ -292,15 +318,16 @@ class PostgresHelper
 	}
 
 	std::string buildQueryColumns(const std::vector<std::string> &requestedColumns, bool convertDateFieldsToUtc = false);
-	static std::shared_ptr<PostgresHelper::SqlResultSet> buildResult(const pqxx::result &result);
+	static std::shared_ptr<SqlResultSet> buildResult(const pqxx::result &result);
 
   private:
 	std::map<std::string, std::map<std::string, std::shared_ptr<SqlColumnSchema>>> _sqlTablesColumnsSchema;
 
 	static std::string getQueryColumn(
-		const std::shared_ptr<SqlColumnSchema> &sqlColumnSchema, const std::string &requestedTableNameAlias, const std::string &requestedColumnName = "",
-		bool convertDateFieldsToUtc = false
+		const std::shared_ptr<SqlColumnSchema> &sqlColumnSchema, const std::string &requestedTableNameAlias,
+		const std::string &requestedColumnName = "", bool convertDateFieldsToUtc = false
 	);
-	static std::string getColumnName(const std::shared_ptr<SqlColumnSchema> &sqlColumnSchema, const std::string &requestedTableNameAlias, std::string requestedColumnName);
+	static std::string getColumnName(const std::shared_ptr<SqlColumnSchema> &sqlColumnSchema, const std::string &requestedTableNameAlias,
+		std::string requestedColumnName);
 	static bool isDataTypeManaged(const std::string &dataType, const std::string &arrayDataType);
 };
