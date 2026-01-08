@@ -239,10 +239,11 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<bool> v;
 
+						/*
 						auto arr = field.as_sql_array<bool>();
 						for (int index = 0; index < arr.size(); index++)
 							v.push_back(arr[index]);
-						/*
+						*/
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -251,7 +252,6 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second == "t");
 						} while (elem.first != pqxx::array_parser::juncture::done);
-						*/
 
 
 						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
@@ -261,10 +261,11 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<int32_t> v;
 
+						/*
 						auto const arr = field.as_sql_array<int32_t>();
 						for (int index = 0; index < arr.size(); index++)
 							v.push_back(arr[index]);
-						/*
+						*/
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -273,7 +274,6 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(stol(elem.second));
 						} while (elem.first != pqxx::array_parser::juncture::done);
-						*/
 
 						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
 					}
@@ -558,8 +558,9 @@ json PostgresHelper::SqlResultSet::asJson()
 	{
 		json rowRoot;
 
-		for (int columnIndex = 0; auto& sqlValue : *row)
+		for (long columnIndex = -1; auto& sqlValue: *row)
 		{
+			columnIndex++;
 			string fieldName= row.info(columnIndex).first;
 
 			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
@@ -567,7 +568,6 @@ json PostgresHelper::SqlResultSet::asJson()
 				rowRoot[jsonKey] = nullptr;
 			else
 				rowRoot[jsonKey] = SqlResultSet::asJson(fieldName, sqlValue);
-			columnIndex++;
 		}
 		jsonRoot.push_back(rowRoot);
 	}
