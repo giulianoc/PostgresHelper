@@ -239,11 +239,11 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<bool> v;
 
-						/*
 						auto arr = field.as_sql_array<bool>();
+						v.resize(arr.size());
 						for (int index = 0; index < arr.size(); index++)
 							v.push_back(arr[index]);
-						*/
+						/*
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -252,6 +252,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second == "t");
 						} while (elem.first != pqxx::array_parser::juncture::done);
+						*/
 
 
 						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
@@ -261,11 +262,11 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<int32_t> v;
 
-						/*
 						auto const arr = field.as_sql_array<int32_t>();
+						v.resize(arr.size());
 						for (int index = 0; index < arr.size(); index++)
 							v.push_back(arr[index]);
-						*/
+						/*
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -274,6 +275,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(stol(elem.second));
 						} while (elem.first != pqxx::array_parser::juncture::done);
+						*/
 
 						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
 					}
@@ -282,11 +284,11 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						vector<string> v;
 
+						auto const arr = field.as_sql_array<string>();
+						v.resize(arr.size());
+						for (int index = 0; index < arr.size(); index++)
+							v.push_back(arr[index]);
 						/*
-						auto const array{field.as_sql_array<string>()};
-						for (int index = 0; index < array.size(); index++)
-							v.push_back(array[index]);
-						*/
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -295,6 +297,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second);
 						} while (elem.first != pqxx::array_parser::juncture::done);
+						*/
 
 						sqlValue.setValue(make_shared<SqlType<vector<string>>>(v));
 					}
