@@ -558,7 +558,7 @@ json PostgresHelper::SqlResultSet::asJson()
 	{
 		json rowRoot;
 
-		for (long columnIndex = -1; auto& sqlValue: *row)
+		for (int16_t columnIndex = -1; auto& sqlValue: *row)
 		{
 			columnIndex++;
 			string fieldName= row.info(columnIndex).first;
