@@ -263,9 +263,19 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 						vector<int32_t> v;
 
 						auto const arr = field.as_sql_array<int32_t>();
+						SPDLOG_INFO("AAAAAAA"
+							", arr.size(): {}", arr.size()
+							);
 						v.resize(arr.size());
 						for (int index = 0; index < arr.size(); index++)
+						{
+							SPDLOG_INFO("AAAAAAA"
+								", index: {}"
+								", arr[index]: {}"
+								, index, arr[index]
+								);
 							v.push_back(arr[index]);
+						}
 						/*
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
