@@ -161,13 +161,13 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					sqlValueType = PostgresHelper::SqlResultSet::char_;
 					break;
 					*/
-				case 20: // int8
+				case 20: // int8 (bigint)
 					sqlValueType = SqlResultSet::int64;
 					break;
 				case 21: // int2 (smallint)
 					sqlValueType = SqlResultSet::int16;
 					break;
-				case 23: // int4
+				case 23: // int4 (integer)
 					sqlValueType = SqlResultSet::int32;
 					break;
 				case 25:   // text
