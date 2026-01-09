@@ -492,75 +492,76 @@ bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arr
 	if (dataType == "\"char\"" || dataType == "integer" || dataType == "smallint" || dataType == "bigint" || dataType == "numeric" ||
 		dataType.starts_with("timestamp") || dataType == "boolean" || dataType == "text" || dataType == "jsonb")
 		return true;
-	else if (dataType == "ARRAY")
+	if (dataType == "ARRAY")
 	{
 		if (arrayDataType == "_int4" || arrayDataType == "_text" || arrayDataType == "_bool")
 			return true;
-		else
-			return false;
-	}
-	else
 		return false;
+	}
+	return false;
 }
 
 json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlValue)
 {
-	json root = json::array();
-
 	if (sqlValue.isNull())
-		root = nullptr;
-	else
+		return nullptr;
+	switch (columnType(fieldName))
 	{
-		switch (columnType(fieldName))
-		{
-		case int16:
-			root = sqlValue.as<int16_t>(-1);
-			break;
-		case int32:
-			root = sqlValue.as<int32_t>(-1);
-			break;
-		case int64:
-			root = sqlValue.as<int64_t>(-1);
-			break;
-		case double_:
-			root = sqlValue.as<double>(-1.0);
-			break;
-		case text:
-			root = sqlValue.as<string>("");
-			break;
-		case boolean:
-			root = sqlValue.as<bool>(false);
-			break;
-		case json_:
-			root = sqlValue.as<json>(nullptr);
-			break;
-		case vectorInt32:
-			for (int32_t value : sqlValue.as<vector<int32_t>>(vector<int32_t>()))
-				root.push_back(value);
-			break;
-		case vectorInt64:
-			for (int64_t value : sqlValue.as<vector<int64_t>>(vector<int64_t>()))
-				root.push_back(value);
-			break;
-		case vectorDouble:
-			for (double value : sqlValue.as<vector<double>>(vector<double>()))
-				root.push_back(value);
-			break;
-		case vectorText:
-			for (const string& value : sqlValue.as<vector<string>>(vector<string>()))
-				root.push_back(value);
-			break;
-		case vectorBoolean:
-			for (bool value : sqlValue.as<vector<bool>>(vector<bool>()))
-				root.push_back(value);
-			break;
-		case unknown:
-		default:
-			root = "unknown";
-			break;
-		}
+	case int16:
+		return sqlValue.as<int16_t>(-1);
+	case int32:
+		return sqlValue.as<int32_t>(-1);
+	case int64:
+		return sqlValue.as<int64_t>(-1);
+	case double_:
+		return sqlValue.as<double>(-1.0);
+	case text:
+		return sqlValue.as<string>("");
+	case boolean:
+		return sqlValue.as<bool>(false);
+	case json_:
+		return sqlValue.as<json>(nullptr);
+	case vectorInt32:
+	{
+		json root = json::array();
+		for (int32_t value : sqlValue.asArray<int32_t>(vector<int32_t>()))
+			root.push_back(value);
+		return root;
 	}
-	return root;
+	case vectorInt64:
+	{
+		json root = json::array();
+		for (int64_t value : sqlValue.asArray<int64_t>(vector<int64_t>()))
+			root.push_back(value);
+		return root;
+	}
+	case vectorDouble:
+	{
+		json root = json::array();
+		for (double value : sqlValue.asArray<double>(vector<double>()))
+			root.push_back(value);
+		return root;
+	}
+	case vectorText:
+	{
+		json root = json::array();
+		for (const string& value : sqlValue.asArray<string>(vector<string>()))
+			root.push_back(value);
+		return root;
+	}
+	case vectorBoolean:
+	{
+		json root = json::array();
+		for (bool value : sqlValue.asArray<bool>(vector<bool>()))
+			root.push_back(value);
+		return root;
+	}
+	case unknown:
+	default:
+		SPDLOG_ERROR("Unknown sql type in asJson"
+			", fieldName: {}", fieldName);
+		return "unknown";
+	}
 }
 
 json PostgresHelper::SqlResultSet::asJson()
@@ -580,7 +581,7 @@ json PostgresHelper::SqlResultSet::asJson()
 			if (sqlValue.isNull())
 				rowRoot[jsonKey] = nullptr;
 			else
-				rowRoot[jsonKey] = SqlResultSet::asJson(fieldName, sqlValue);
+				rowRoot[jsonKey] = asJson(fieldName, sqlValue);
 		}
 		jsonRoot.push_back(rowRoot);
 	}

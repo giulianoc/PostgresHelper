@@ -39,24 +39,53 @@ class PostgresHelper
 	{
 	  protected:
 		bool _isNull;
+		bool _isArray;
 
 	  public:
-		Base() { _isNull = true; };
+		Base() : _isNull(true), _isArray(false) {};
 		virtual ~Base() = default;
 		[[nodiscard]] bool isNull() const { return _isNull; };
+		[[nodiscard]] bool isArray() const { return _isArray; }
 	};
 
-	template <typename T> class SqlType final : public Base
+	template <typename T>
+	class SqlType final : public Base
 	{
-		T value;
+		std::variant<T, std::vector<T>> value;
 
 	  public:
 		explicit SqlType(T v)
 		{
 			value = v;
 			_isNull = false;
+			_isArray = false;
+		}
+		explicit SqlType(const std::vector<T>& v)
+		{
+			value = v;
+			_isNull = false;
+			_isArray = true;
+		}
+		T as()
+		{
+			if (_isArray)
+			{
+				const std::string errorMessage = "Attempted to retrieve a single value from an array";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			return std::get<T>(value);
 		};
-		T as() { return value; };
+		std::vector<T> asArray()
+		{
+			if (!_isArray)
+			{
+				const std::string errorMessage = "Attempted to retrieve an array from a single value";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			return std::get<std::vector<T>>(value);
+		}
 	};
 
 	class SqlValue
@@ -70,13 +99,20 @@ class PostgresHelper
 		void setValue(const std::shared_ptr<Base> &val) { this->value = val; };
 
 		[[nodiscard]] bool isNull() const { return value->isNull(); };
+		[[nodiscard]] bool isArray() const { return value->isArray(); }
 
-		template <class T> T as(T valueIfNull = {})
+		template <class T>
+		T as(T valueIfNull = {})
 		{
 			if (isNull())
 				return valueIfNull;
+			if (isArray())
+			{
+				const std::string errorMessage = "SqlValue contains an array, use asArray<T>() instead";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
 			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
-
 			if (!valued)
 			{
 				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
@@ -85,10 +121,39 @@ class PostgresHelper
 			}
 			return valued->as();
 		};
-		template <class T> std::optional<T> asOpt()
+
+		template <class T>
+		std::vector<T> asArray(std::vector<T> valueIfNull = {})
+		{
+			if (isNull())
+				return valueIfNull;
+			if (!isArray())
+			{
+				const std::string errorMessage = "SqlValue does not contain an array, use as<T>() instead";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
+			if (!valued)
+			{
+				const std::string errorMessage = "SqlValue type mismatch in asArray<T>()";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			return valued->asArray();
+		}
+
+		template <class T>
+		std::optional<T> asOpt()
 		{
 			if (isNull())
 				return std::nullopt;
+			if (isArray())
+			{
+				const std::string errorMessage = "SqlValue contains an array, use asArrayOpt<T>() instead";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
 			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
 
 			if (!valued)
@@ -99,6 +164,27 @@ class PostgresHelper
 			}
 			return valued->as();
 		};
+
+		template <class T>
+		std::optional<std::vector<T>> asArrayOpt()
+		{
+			if (isNull())
+				return std::nullopt;
+			if (!isArray())
+			{
+				const std::string errorMessage = "SqlValue does not contain an array, use asOpt<T>() instead";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
+			if (!valued)
+			{
+				const std::string errorMessage = "SqlValue type mismatch in asArrayOpt<T>()";
+				SPDLOG_ERROR(errorMessage);
+				throw std::runtime_error(errorMessage);
+			}
+			return valued->asArray();
+		}
 	};
 
 	class SqlResultSet final
