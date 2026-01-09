@@ -191,8 +191,13 @@ class PostgresHelper
 		{
 			std::vector<T> result;
 			result.reserve(arr.size());
+			for (auto it = arr.cbegin(); it != arr.cend(); ++it)
+				result.push_back(static_cast<T>(*it)); // Copia sicura del valore
+			/*
+			Commentato per evitare un warning del compilatore generato a causa dell'operatore []
 			for (int index = 0; index < arr.size(); index++)
-				result.push_back(static_cast<T>(arr[index])); // Converte e copia
+				result.push_back(arr[index]); // Converte e copia
+			*/
 			return result;
 		}
 	};
