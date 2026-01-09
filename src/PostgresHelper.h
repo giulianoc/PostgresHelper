@@ -185,6 +185,16 @@ class PostgresHelper
 			}
 			return valued->asArray();
 		}
+
+		template <typename T>
+		std::vector<T> toVector(const pqxx::array<T> &arr)
+		{
+			std::vector<T> result;
+			result.reserve(arr.size());
+			for (int index = 0; index < arr.size(); index++)
+				result.push_back(static_cast<T>(arr[index])); // Converte e copia
+			return result;
+		}
 	};
 
 	class SqlResultSet final

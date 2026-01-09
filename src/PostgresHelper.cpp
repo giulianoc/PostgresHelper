@@ -235,48 +235,12 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							, fieldName, field.type(), sqlValue.as(string())
 							);
 						break;
-					case SqlResultSet::vectorBoolean:
-					{
-						vector<bool> v;
-
-						auto arr = field.as_sql_array<bool>();
-						v.resize(arr.size());
-						for (int index = 0; index < arr.size(); index++)
-							v.push_back(arr[index]);
-						/*
-						auto array = field.as_array();
-						pair<pqxx::array_parser::juncture, string> elem;
-						do
-						{
-							elem = array.get_next();
-							if (elem.first == pqxx::array_parser::juncture::string_value)
-								v.push_back(elem.second == "t");
-						} while (elem.first != pqxx::array_parser::juncture::done);
-						*/
-
-
-						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
-					}
-					break;
 					case SqlResultSet::vectorInt32:
 					{
-						vector<int32_t> v;
-
 						auto const arr = field.as_sql_array<int32_t>();
-						SPDLOG_INFO("AAAAAAA"
-							", arr.size(): {}", arr.size()
-							);
-						v.resize(arr.size());
-						for (int index = 0; index < arr.size(); index++)
-						{
-							SPDLOG_INFO("AAAAAAA"
-								", index: {}"
-								", arr[index]: {}"
-								, index, arr[index]
-								);
-							v.push_back(arr[index]);
-						}
+						sqlValue.setValue(make_shared<SqlType<int32_t>>(sqlValue.toVector(arr)));
 						/*
+						vector<int32_t> v;
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -285,20 +249,28 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(stol(elem.second));
 						} while (elem.first != pqxx::array_parser::juncture::done);
-						*/
-
 						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
+						*/
 					}
-					break;
+						break;
+					case SqlResultSet::vectorInt64:
+					{
+						auto const arr = field.as_sql_array<int64_t>();
+						sqlValue.setValue(make_shared<SqlType<int64_t>>(sqlValue.toVector(arr)));
+					}
+						break;
+					case SqlResultSet::vectorDouble:
+					{
+						auto const arr = field.as_sql_array<double>();
+						sqlValue.setValue(make_shared<SqlType<double>>(sqlValue.toVector(arr)));
+					}
+						break;
 					case SqlResultSet::vectorText:
 					{
-						vector<string> v;
-
 						auto const arr = field.as_sql_array<string>();
-						v.resize(arr.size());
-						for (int index = 0; index < arr.size(); index++)
-							v.push_back(arr[index]);
+						sqlValue.setValue(make_shared<SqlType<string>>(sqlValue.toVector(arr)));
 						/*
+						vector<string> v;
 						auto array = field.as_array();
 						pair<pqxx::array_parser::juncture, string> elem;
 						do
@@ -307,9 +279,26 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							if (elem.first == pqxx::array_parser::juncture::string_value)
 								v.push_back(elem.second);
 						} while (elem.first != pqxx::array_parser::juncture::done);
-						*/
-
 						sqlValue.setValue(make_shared<SqlType<vector<string>>>(v));
+						*/
+					}
+						break;
+					case SqlResultSet::vectorBoolean:
+					{
+						auto arr = field.as_sql_array<bool>();
+						sqlValue.setValue(make_shared<SqlType<bool>>(sqlValue.toVector(arr)));
+						/*
+						vector<bool> v;
+						auto array = field.as_array();
+						pair<pqxx::array_parser::juncture, string> elem;
+						do
+						{
+							elem = array.get_next();
+							if (elem.first == pqxx::array_parser::juncture::string_value)
+								v.push_back(elem.second == "t");
+						} while (elem.first != pqxx::array_parser::juncture::done);
+						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
+						*/
 					}
 					break;
 					case SqlResultSet::double_:
