@@ -134,6 +134,8 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 {
 	auto sqlResultSet = make_shared<SqlResultSet>();
 
+	sqlResultSet->setAffectedRows(result.affected_rows());
+
 	sqlResultSet->clearData();
 	int rowIndex = 0;
 	for (auto row : result)
