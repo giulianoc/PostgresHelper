@@ -192,6 +192,9 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 				case 3802: // jsonb
 					sqlValueType = SqlResultSet::json_;
 					break;
+				case 3807: // array of jsonb
+					sqlValueType = SqlResultSet::vectorJson;
+					break;
 				default:
 				{
 					// per avere il mapping tra oid e type: select oid, typname from pg_catalog.pg_type
@@ -241,68 +244,32 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					{
 						auto const arr = field.as_sql_array<int32_t>();
 						sqlValue.setValue(make_shared<SqlType<int32_t>>(sqlValue.toVector(arr)));
-						/*
-						vector<int32_t> v;
-						auto array = field.as_array();
-						pair<pqxx::array_parser::juncture, string> elem;
-						do
-						{
-							elem = array.get_next();
-							if (elem.first == pqxx::array_parser::juncture::string_value)
-								v.push_back(stol(elem.second));
-						} while (elem.first != pqxx::array_parser::juncture::done);
-						sqlValue.setValue(make_shared<SqlType<vector<int32_t>>>(v));
-						*/
-					}
 						break;
+					}
 					case SqlResultSet::vectorInt64:
 					{
 						auto const arr = field.as_sql_array<int64_t>();
 						sqlValue.setValue(make_shared<SqlType<int64_t>>(sqlValue.toVector(arr)));
-					}
 						break;
+					}
 					case SqlResultSet::vectorDouble:
 					{
 						auto const arr = field.as_sql_array<double>();
 						sqlValue.setValue(make_shared<SqlType<double>>(sqlValue.toVector(arr)));
-					}
 						break;
+					}
 					case SqlResultSet::vectorText:
 					{
 						auto const arr = field.as_sql_array<string>();
 						sqlValue.setValue(make_shared<SqlType<string>>(sqlValue.toVector(arr)));
-						/*
-						vector<string> v;
-						auto array = field.as_array();
-						pair<pqxx::array_parser::juncture, string> elem;
-						do
-						{
-							elem = array.get_next();
-							if (elem.first == pqxx::array_parser::juncture::string_value)
-								v.push_back(elem.second);
-						} while (elem.first != pqxx::array_parser::juncture::done);
-						sqlValue.setValue(make_shared<SqlType<vector<string>>>(v));
-						*/
-					}
 						break;
+					}
 					case SqlResultSet::vectorBoolean:
 					{
 						auto arr = field.as_sql_array<bool>();
 						sqlValue.setValue(make_shared<SqlType<bool>>(sqlValue.toVector(arr)));
-						/*
-						vector<bool> v;
-						auto array = field.as_array();
-						pair<pqxx::array_parser::juncture, string> elem;
-						do
-						{
-							elem = array.get_next();
-							if (elem.first == pqxx::array_parser::juncture::string_value)
-								v.push_back(elem.second == "t");
-						} while (elem.first != pqxx::array_parser::juncture::done);
-						sqlValue.setValue(make_shared<SqlType<vector<bool>>>(v));
-						*/
+						break;
 					}
-					break;
 					case SqlResultSet::double_:
 						sqlValue.setValue(make_shared<SqlType<double>>(field.as<double>()));
 						break;
@@ -315,6 +282,17 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							, fieldName, field.type(), JSONUtils::toString(sqlValue.as(json()))
 							);
 						break;
+					case SqlResultSet::vectorJson:
+					{
+						auto arr = field.as_sql_array<string>();
+						auto vect = sqlValue.toVector(arr);
+						vector<json> jsonVect;
+						jsonVect.reserve(vect.size());
+						for (auto &item : vect)
+							jsonVect.push_back(JSONUtils::toJson<json>(item));
+						sqlValue.setValue(make_shared<SqlType<json>>(jsonVect));
+						break;
+					}
 					default:
 					{
 						string errorMessage = std::format(
@@ -514,39 +492,51 @@ json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlV
 		return sqlValue.as<json>(nullptr);
 	case vectorInt32:
 	{
+		/*
 		json root = json::array();
 		for (int32_t value : sqlValue.asArray<int32_t>(vector<int32_t>()))
 			root.push_back(value);
-		return root;
+			*/
+		return sqlValue.asArray<int32_t>(vector<int32_t>());
 	}
 	case vectorInt64:
 	{
+		/*
 		json root = json::array();
 		for (int64_t value : sqlValue.asArray<int64_t>(vector<int64_t>()))
 			root.push_back(value);
-		return root;
+			*/
+		return sqlValue.asArray<int64_t>(vector<int64_t>());
 	}
 	case vectorDouble:
 	{
+		/*
 		json root = json::array();
 		for (double value : sqlValue.asArray<double>(vector<double>()))
 			root.push_back(value);
-		return root;
+			*/
+		return sqlValue.asArray<double>(vector<double>());
 	}
 	case vectorText:
 	{
+		/*
 		json root = json::array();
 		for (const string& value : sqlValue.asArray<string>(vector<string>()))
 			root.push_back(value);
-		return root;
+		*/
+		return sqlValue.asArray<string>(vector<string>());
 	}
 	case vectorBoolean:
 	{
+		/*
 		json root = json::array();
 		for (bool value : sqlValue.asArray<bool>(vector<bool>()))
 			root.push_back(value);
-		return root;
+		*/
+		return sqlValue.asArray<bool>(vector<bool>());
 	}
+	case vectorJson:
+		return sqlValue.asArray<json>(vector<json>());
 	case unknown:
 	default:
 		SPDLOG_ERROR("Unknown sql type in asJson"

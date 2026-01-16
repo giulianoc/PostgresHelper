@@ -221,7 +221,8 @@ class PostgresHelper
 			vectorInt64,
 			vectorDouble,
 			vectorText,
-			vectorBoolean
+			vectorBoolean,
+			vectorJson
 		};
 
 		class SqlRow
