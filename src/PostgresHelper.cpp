@@ -545,27 +545,32 @@ json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlV
 	}
 }
 
+json PostgresHelper::SqlResultSet::asJson(SqlRow& sqlRow)
+{
+	json rowRoot;
+
+	for (int16_t columnIndex = -1; auto& sqlValue: *sqlRow)
+	{
+		columnIndex++;
+		string fieldName= sqlRow.info(columnIndex).first;
+
+		const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
+		if (sqlValue.isNull())
+			rowRoot[jsonKey] = nullptr;
+		else
+			rowRoot[jsonKey] = asJson(fieldName, sqlValue);
+	}
+
+	return rowRoot;
+}
+
 json PostgresHelper::SqlResultSet::asJson()
 {
 	json jsonRoot = json::array();
 
 	for (auto& row : _sqlValuesByIndex)
-	{
-		json rowRoot;
+		jsonRoot.push_back(asJson(row));
 
-		for (int16_t columnIndex = -1; auto& sqlValue: *row)
-		{
-			columnIndex++;
-			string fieldName= row.info(columnIndex).first;
-
-			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
-			if (sqlValue.isNull())
-				rowRoot[jsonKey] = nullptr;
-			else
-				rowRoot[jsonKey] = asJson(fieldName, sqlValue);
-		}
-		jsonRoot.push_back(rowRoot);
-	}
 	return jsonRoot;
 }
 

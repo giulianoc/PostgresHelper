@@ -295,7 +295,7 @@ class PostgresHelper
 		std::map<std::string, std::pair<size_t, SqlValueType>> _sqlColumnInfoByName;
 
 		// numero di righe affette da una query di tipo INSERT, UPDATE, DELETE
-		int affectedRows = 0;
+		int _affectedRows = 0;
 
 		// per ogni riga (std::vector) abbiamo un vettore che contiene i valori delle colonne by Index
 		// std::vector<std::vector<SqlValue>> _sqlValuesByIndex;
@@ -317,8 +317,9 @@ class PostgresHelper
 
 		[[nodiscard]] size_t size() const { return _sqlValuesByIndex.size(); };
 		[[nodiscard]] bool empty() const { return _sqlValuesByIndex.empty(); };
-		void setAffectedRows(int affectedRows) { this->affectedRows = affectedRows; }
-		[[nodiscard]] int getAffectedRows() const { return affectedRows; }
+		void setAffectedRows(const int affectedRows) { this->_affectedRows = affectedRows; }
+		[[nodiscard]] int getAffectedRows() const { return _affectedRows; }
+		nlohmann::json asJson(SqlRow& sqlRow);
 		nlohmann::json asJson();
 		void addColumnType(std::string fieldName, SqlValueType sqlValueType)
 		{
