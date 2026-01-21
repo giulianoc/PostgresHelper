@@ -210,7 +210,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 				}
 				}
 			}
-			SqlValue sqlValue;
+			SqlResultSet::SqlRow::SqlValue sqlValue;
 			{
 				if (field.is_null())
 					// sqlValue.setNull();
@@ -470,11 +470,11 @@ bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arr
 	return false;
 }
 
-json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlValue)
+json PostgresHelper::SqlResultSet::SqlRow::asJson(const string& fieldName, const SqlValueType fieldType, SqlValue sqlValue)
 {
 	if (sqlValue.isNull())
 		return nullptr;
-	switch (columnType(fieldName))
+	switch (fieldType)
 	{
 	case int16:
 		return sqlValue.as<int16_t>(-1);
@@ -545,27 +545,32 @@ json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlV
 	}
 }
 
-json PostgresHelper::SqlResultSet::asJson()
+json PostgresHelper::SqlResultSet::SqlRow::asJson() const
+{
+	json rowRoot;
+
+	for (int16_t columnIndex = -1; auto& sqlValue: _sqlRow)
+	{
+		columnIndex++;
+		auto [fieldName, fieldType] = info(columnIndex);
+
+		const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
+		if (sqlValue.isNull())
+			rowRoot[jsonKey] = nullptr;
+		else
+			rowRoot[jsonKey] = asJson(fieldName, fieldType, sqlValue);
+	}
+
+	return rowRoot;
+}
+
+json PostgresHelper::SqlResultSet::asJson() const
 {
 	json jsonRoot = json::array();
 
-	for (auto& row : _sqlValuesByIndex)
-	{
-		json rowRoot;
+	for (auto& sqlRow : _sqlValuesByIndex)
+		jsonRoot.push_back(sqlRow.asJson());
 
-		for (int16_t columnIndex = -1; auto& sqlValue: *row)
-		{
-			columnIndex++;
-			string fieldName= row.info(columnIndex).first;
-
-			const string& jsonKey = fieldName; // std::format("{} ({})", fieldName, (int)type(fieldName));
-			if (sqlValue.isNull())
-				rowRoot[jsonKey] = nullptr;
-			else
-				rowRoot[jsonKey] = asJson(fieldName, sqlValue);
-		}
-		jsonRoot.push_back(rowRoot);
-	}
 	return jsonRoot;
 }
 

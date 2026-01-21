@@ -88,7 +88,35 @@ class PostgresHelper
 		}
 	};
 
-	class SqlValue
+	class SqlResultSet final
+	{
+	  public:
+		SqlResultSet() = default;
+		~SqlResultSet() = default;
+		enum SqlValueType
+		{
+			unknown,
+			int16,
+			int32,
+			int64,
+			double_,
+			text,
+			boolean,
+			json_,
+			vectorInt32,
+			vectorInt64,
+			vectorDouble,
+			vectorText,
+			vectorBoolean,
+			vectorJson
+		};
+
+		class SqlRow
+		{
+			friend class SqlResultSet;
+
+		public:
+			class SqlValue
 	{
 		std::shared_ptr<Base> value;
 
@@ -202,34 +230,6 @@ class PostgresHelper
 		}
 	};
 
-	class SqlResultSet final
-	{
-	  public:
-		SqlResultSet() = default;
-		~SqlResultSet() = default;
-		enum SqlValueType
-		{
-			unknown,
-			int16,
-			int32,
-			int64,
-			double_,
-			text,
-			boolean,
-			json_,
-			vectorInt32,
-			vectorInt64,
-			vectorDouble,
-			vectorText,
-			vectorBoolean,
-			vectorJson
-		};
-
-		class SqlRow
-		{
-			friend class SqlResultSet;
-
-		public:
 			explicit SqlRow(std::vector<std::pair<std::string, SqlValueType>> *sqlColumnInfoByIndex,
 				std::map<std::string, std::pair<size_t, SqlValueType>> *sqlColumnInfoByName
 				)
@@ -239,6 +239,9 @@ class PostgresHelper
 			~SqlRow() = default;
 
 			void add(const SqlValue& sqlValue) { _sqlRow.push_back(sqlValue); }
+
+			static nlohmann::json asJson(const std::string& fieldName, SqlValueType fieldType, SqlValue sqlValue) ;
+			[[nodiscard]] nlohmann::json asJson() const;
 
 			std::vector<SqlValue> &operator*() { return _sqlRow; }
 			[[nodiscard]] std::pair<size_t, SqlValueType> & info(const std::string& columnName, const bool caseSensitive = false) const
@@ -295,7 +298,7 @@ class PostgresHelper
 		std::map<std::string, std::pair<size_t, SqlValueType>> _sqlColumnInfoByName;
 
 		// numero di righe affette da una query di tipo INSERT, UPDATE, DELETE
-		int affectedRows = 0;
+		int _affectedRows = 0;
 
 		// per ogni riga (std::vector) abbiamo un vettore che contiene i valori delle colonne by Index
 		// std::vector<std::vector<SqlValue>> _sqlValuesByIndex;
@@ -317,9 +320,9 @@ class PostgresHelper
 
 		[[nodiscard]] size_t size() const { return _sqlValuesByIndex.size(); };
 		[[nodiscard]] bool empty() const { return _sqlValuesByIndex.empty(); };
-		void setAffectedRows(int affectedRows) { this->affectedRows = affectedRows; }
-		[[nodiscard]] int getAffectedRows() const { return affectedRows; }
-		nlohmann::json asJson();
+		void setAffectedRows(const int affectedRows) { this->_affectedRows = affectedRows; }
+		[[nodiscard]] int getAffectedRows() const { return _affectedRows; }
+		nlohmann::json asJson() const;
 		void addColumnType(std::string fieldName, SqlValueType sqlValueType)
 		{
 			size_t newColumnIndex = _sqlColumnInfoByIndex.size();
@@ -376,7 +379,6 @@ class PostgresHelper
 			}
 			return it->second.first;
 		}
-		nlohmann::json asJson(const std::string& fieldName, SqlValue sqlValue);
 		std::vector<SqlRow>::iterator begin() { return _sqlValuesByIndex.begin(); };
 		std::vector<SqlRow>::iterator end() { return _sqlValuesByIndex.end(); };
 		[[nodiscard]] std::vector<SqlRow>::const_iterator begin() const { return _sqlValuesByIndex.begin(); };
