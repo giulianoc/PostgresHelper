@@ -71,7 +71,7 @@ class PostgresHelper
 			if (_isArray)
 			{
 				const std::string errorMessage = "Attempted to retrieve a single value from an array";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return std::get<T>(value);
@@ -81,7 +81,7 @@ class PostgresHelper
 			if (!_isArray)
 			{
 				const std::string errorMessage = "Attempted to retrieve an array from a single value";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return std::get<std::vector<T>>(value);
@@ -109,14 +109,14 @@ class PostgresHelper
 			if (isArray())
 			{
 				const std::string errorMessage = "SqlValue contains an array, use asArray<T>() instead";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
 			if (!valued)
 			{
 				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return valued->as();
@@ -130,14 +130,14 @@ class PostgresHelper
 			if (!isArray())
 			{
 				const std::string errorMessage = "SqlValue does not contain an array, use as<T>() instead";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
 			if (!valued)
 			{
 				const std::string errorMessage = "SqlValue type mismatch in asArray<T>()";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return valued->asArray();
@@ -151,7 +151,7 @@ class PostgresHelper
 			if (isArray())
 			{
 				const std::string errorMessage = "SqlValue contains an array, use asArrayOpt<T>() instead";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
@@ -159,7 +159,7 @@ class PostgresHelper
 			if (!valued)
 			{
 				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return valued->as();
@@ -173,14 +173,14 @@ class PostgresHelper
 			if (!isArray())
 			{
 				const std::string errorMessage = "SqlValue does not contain an array, use asOpt<T>() instead";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
 			if (!valued)
 			{
 				const std::string errorMessage = "SqlValue type mismatch in asArrayOpt<T>()";
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return valued->asArray();
@@ -247,7 +247,7 @@ class PostgresHelper
 				if (it == _sqlColumnInfoByName->end())
 				{
 					const std::string errorMessage = std::format("Column name not found: {}", columnName);
-					SPDLOG_ERROR(errorMessage);
+					LOG_ERROR(errorMessage);
 					throw std::out_of_range(errorMessage);
 				}
 				return it->second;
@@ -257,7 +257,7 @@ class PostgresHelper
 				if (columnIndex >= _sqlColumnInfoByIndex->size())
 				{
 					const std::string errorMessage = std::format("Wrong column index: {}", columnIndex);
-					SPDLOG_ERROR(errorMessage);
+					LOG_ERROR(errorMessage);
 					throw std::out_of_range(errorMessage);
 				}
 				return _sqlColumnInfoByIndex->at(columnIndex);
@@ -267,7 +267,7 @@ class PostgresHelper
 				if (columnIndex >= _sqlRow.size())
 				{
 					const std::string errorMessage = std::format("Wrong index: {}", columnIndex);
-					SPDLOG_ERROR(errorMessage);
+					LOG_ERROR(errorMessage);
 					throw std::out_of_range(errorMessage);
 				}
 				return _sqlRow[columnIndex];
@@ -340,7 +340,7 @@ class PostgresHelper
 			if (it == _sqlColumnInfoByName.end())
 			{
 				const std::string errorMessage = std::format("Column name not found: {}", columnName);
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::runtime_error(errorMessage);
 			}
 			return it->second.second;
@@ -350,7 +350,7 @@ class PostgresHelper
 			if (columnIndex >= _sqlColumnInfoByIndex.size())
 			{
 				const std::string errorMessage = std::format("Wrong column index: {}", columnIndex);
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::out_of_range(errorMessage);
 			}
 			return _sqlColumnInfoByIndex[columnIndex].second;
@@ -360,7 +360,7 @@ class PostgresHelper
 			if (columnIndex >= _sqlColumnInfoByIndex.size())
 			{
 				const std::string errorMessage = std::format("Wrong column index: {}", columnIndex);
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::out_of_range(errorMessage);
 			}
 			return _sqlColumnInfoByIndex[columnIndex].first;
@@ -371,7 +371,7 @@ class PostgresHelper
 			if (it == _sqlColumnInfoByName.end())
 			{
 				const std::string errorMessage = std::format("Column name not found: {}", columnName);
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::out_of_range(errorMessage);
 			}
 			return it->second.first;
@@ -386,7 +386,7 @@ class PostgresHelper
 			if (index >= _sqlValuesByIndex.size())
 			{
 				const std::string errorMessage = std::format("Wrong index: {}", index);
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 				throw std::out_of_range(errorMessage);
 			}
 			return _sqlValuesByIndex[index];

@@ -30,7 +30,7 @@ string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns,
 	if (requestedColumns.empty())
 	{
 		string errorMessage = "no requestedColumns found";
-		SPDLOG_ERROR(errorMessage);
+		LOG_ERROR(errorMessage);
 
 		throw runtime_error(errorMessage);
 	}
@@ -64,7 +64,7 @@ string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns,
 				requestedTableName = StringUtils::lowerCase(requestedTableName);
 				requestedColumnName = StringUtils::lowerCase(requestedColumnName);
 
-				// SPDLOG_INFO(
+				// LOG_INFO(
 				// 	"ColumnInfo"
 				// 	", column: {}"
 				// 	", requestedTableNameAndAlias: {}"
@@ -83,7 +83,7 @@ string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns,
 					", requestedTableName: {}",
 					requestedTableName
 				);
-				SPDLOG_ERROR(errorMessage);
+				LOG_ERROR(errorMessage);
 
 				throw runtime_error(errorMessage);
 			}
@@ -114,7 +114,7 @@ string PostgresHelper::buildQueryColumns(const vector<string> &requestedColumns,
 						", requestedColumnName: {}",
 						requestedTableName, requestedColumnName
 					);
-					SPDLOG_ERROR(errorMessage);
+					LOG_ERROR(errorMessage);
 
 					throw runtime_error(errorMessage);
 				}
@@ -148,7 +148,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 			string fieldName = field.name();
 			SqlResultSet::SqlValueType sqlValueType = SqlResultSet::unknown;
 			{
-				SPDLOG_TRACE("buildResult"
+				LOG_TRACE("buildResult"
 					", fieldName: {}"
 					", fieldType: {}", fieldName, field.type()
 					);
@@ -204,7 +204,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 						", fieldName: {}",
 						field.type(), field.name()
 					);
-					SPDLOG_ERROR(errorMessage);
+					LOG_ERROR(errorMessage);
 
 					throw runtime_error(errorMessage);
 				}
@@ -233,7 +233,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 						break;
 					case SqlResultSet::text:
 						sqlValue.setValue(make_shared<SqlType<string>>(field.as<string>()));
-						SPDLOG_TRACE("buildResult"
+						LOG_TRACE("buildResult"
 							", fieldName: {}"
 							", fieldType: {}"
 							", fieldValue: {}"
@@ -275,7 +275,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 						break;
 					case SqlResultSet::json_:
 						sqlValue.setValue(make_shared<SqlType<json>>(JSONUtils::toJson<json>(field.as<string>())));
-						SPDLOG_TRACE("buildResult"
+						LOG_TRACE("buildResult"
 							", fieldName: {}"
 							", fieldType: {}"
 							", fieldValue: {}"
@@ -301,7 +301,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 							", fieldName: {}",
 							(int)sqlValueType, field.name()
 						);
-						SPDLOG_ERROR(errorMessage);
+						LOG_ERROR(errorMessage);
 
 						throw runtime_error(errorMessage);
 					}
@@ -402,7 +402,7 @@ string PostgresHelper::getQueryColumn(
 			", dataType: {}",
 			sqlColumnSchema->dataType
 		);
-		SPDLOG_ERROR(errorMessage);
+		LOG_ERROR(errorMessage);
 
 		throw runtime_error(errorMessage);
 	}
@@ -448,7 +448,7 @@ string PostgresHelper::getColumnName(const shared_ptr<SqlColumnSchema>& sqlColum
 			", dataType: {}",
 			sqlColumnSchema->dataType
 		);
-		SPDLOG_ERROR(errorMessage);
+		LOG_ERROR(errorMessage);
 
 		throw runtime_error(errorMessage);
 	}
@@ -539,7 +539,7 @@ json PostgresHelper::SqlResultSet::asJson(const string& fieldName, SqlValue sqlV
 		return sqlValue.asArray<json>(vector<json>());
 	case unknown:
 	default:
-		SPDLOG_ERROR("Unknown sql type in asJson"
+		LOG_ERROR("Unknown sql type in asJson"
 			", fieldName: {}", fieldName);
 		return "unknown";
 	}
@@ -584,7 +584,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 								  "order by table_name, column_name ";
 			chrono::system_clock::time_point startSql = chrono::system_clock::now();
 			pqxx::result result = trans.transaction->exec(sqlStatement);
-			SPDLOG_DEBUG(
+			LOG_DEBUG(
 				"SQL statement"
 				", sqlStatement: @{}@"
 				", getConnectionId: @{}@"
@@ -598,7 +598,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 				if (row["table_name"].is_null() || row["column_name"].is_null() || row["is_nullable"].is_null() || row["data_type"].is_null() ||
 					row["udt_name"].is_null())
 				{
-					SPDLOG_ERROR(
+					LOG_ERROR(
 						"schema null column!!!"
 						", table_name: {}"
 						", column_name: {}"
@@ -619,7 +619,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 
 				if (!isDataTypeManaged(dataType, arrayDataType))
 				{
-					SPDLOG_ERROR(
+					LOG_ERROR(
 						"dataType is not managed by our class"
 						", table_name: {}"
 						", column_name: {}"
@@ -629,7 +629,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 					);
 				}
 
-				SPDLOG_DEBUG(
+				LOG_DEBUG(
 					"table-column found"
 					", table_name: {}"
 					", column_name: {}"
@@ -661,7 +661,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 		if (se != nullptr)
 			try
 			{
-				SPDLOG_ERROR(
+				LOG_ERROR(
 					"query failed"
 					", query: {}"
 					", exceptionMessage: {}"
@@ -671,10 +671,10 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 			}
 			catch (...)
 			{
-				SPDLOG_ERROR("exception->what() caused crash");
+				LOG_ERROR("exception->what() caused crash");
 			}
 		else
-			SPDLOG_ERROR(
+			LOG_ERROR(
 				"query failed"
 				", exception: {}"
 				", conn: {}",

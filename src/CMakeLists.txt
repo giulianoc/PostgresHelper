@@ -29,6 +29,7 @@ SET (HEADERS
 )
 
 include_directories("${SPDLOG_INCLUDE_DIR}")
+include_directories("${THREADLOGGER_INCLUDE_DIR}")
 include_directories("${NLOHMANN_INCLUDE_DIR}")
 include_directories("${LIBPQXX_INCLUDE_DIR}")
 include_directories("${STRINGUTILS_INCLUDE_DIR}")
@@ -36,10 +37,11 @@ include_directories("${JSONUTILS_INCLUDE_DIR}")
 include_directories("${DBCONN_INCLUDE_DIR}")
 
 if(APPLE)
-  link_directories("${STRINGUTILS_LIB_DIR}")
-  link_directories("${JSONUTILS_LIB_DIR}")
-  link_directories("${LIBPQXX_LIB_DIR}")
-  link_directories("${LIBPQ_LIB_DIR}")
+    link_directories(${THREADLOGGER_LIB_DIR})
+    link_directories("${STRINGUTILS_LIB_DIR}")
+    link_directories("${JSONUTILS_LIB_DIR}")
+    link_directories("${LIBPQXX_LIB_DIR}")
+    link_directories("${LIBPQ_LIB_DIR}")
 endif()
 
 add_library (PostgresHelper SHARED ${SOURCES} ${HEADERS})
