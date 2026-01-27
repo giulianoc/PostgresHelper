@@ -463,7 +463,7 @@ bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arr
 		return true;
 	if (dataType == "ARRAY")
 	{
-		if (arrayDataType == "_int4" || arrayDataType == "_text" || arrayDataType == "_bool")
+		if (arrayDataType == "_int4" || arrayDataType == "_text" || arrayDataType == "_bool" || arrayDataType == "_jsonb")
 			return true;
 		return false;
 	}
