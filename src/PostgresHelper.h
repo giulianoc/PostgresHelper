@@ -117,118 +117,118 @@ class PostgresHelper
 
 		public:
 			class SqlValue
-	{
-		std::shared_ptr<Base> value;
-
-	  public:
-		SqlValue() = default;
-		~SqlValue() = default;
-
-		void setValue(const std::shared_ptr<Base> &val) { this->value = val; };
-
-		[[nodiscard]] bool isNull() const { return value->isNull(); };
-		[[nodiscard]] bool isArray() const { return value->isArray(); }
-
-		template <class T>
-		T as(T valueIfNull = {})
-		{
-			if (isNull())
-				return valueIfNull;
-			if (isArray())
 			{
-				const std::string errorMessage = "SqlValue contains an array, use asArray<T>() instead";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
-			if (!valued)
-			{
-				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			return valued->as();
-		};
+				std::shared_ptr<Base> value;
 
-		template <class T>
-		std::vector<T> asArray(std::vector<T> valueIfNull = {})
-		{
-			if (isNull())
-				return valueIfNull;
-			if (!isArray())
-			{
-				const std::string errorMessage = "SqlValue does not contain an array, use as<T>() instead";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
-			if (!valued)
-			{
-				const std::string errorMessage = "SqlValue type mismatch in asArray<T>()";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			return valued->asArray();
-		}
+				public:
+					SqlValue() = default;
+					~SqlValue() = default;
 
-		template <class T>
-		std::optional<T> asOpt()
-		{
-			if (isNull())
-				return std::nullopt;
-			if (isArray())
-			{
-				const std::string errorMessage = "SqlValue contains an array, use asArrayOpt<T>() instead";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			auto valued = dynamic_pointer_cast<SqlType<T>>(value);
+					void setValue(const std::shared_ptr<Base> &val) { this->value = val; };
 
-			if (!valued)
-			{
-				const std::string errorMessage = "SqlValue type mismatch in as<T>()";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			return valued->as();
-		};
+					[[nodiscard]] bool isNull() const { return value->isNull(); };
+					[[nodiscard]] bool isArray() const { return value->isArray(); }
 
-		template <class T>
-		std::optional<std::vector<T>> asArrayOpt()
-		{
-			if (isNull())
-				return std::nullopt;
-			if (!isArray())
-			{
-				const std::string errorMessage = "SqlValue does not contain an array, use asOpt<T>() instead";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
-			if (!valued)
-			{
-				const std::string errorMessage = "SqlValue type mismatch in asArrayOpt<T>()";
-				LOG_ERROR(errorMessage);
-				throw std::runtime_error(errorMessage);
-			}
-			return valued->asArray();
-		}
+					template <class T>
+					T as(T valueIfNull = {})
+					{
+						if (isNull())
+							return valueIfNull;
+						if (isArray())
+						{
+							const std::string errorMessage = "SqlValue contains an array, use asArray<T>() instead";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						auto valued = dynamic_pointer_cast<SqlType<T>>(value);
+						if (!valued)
+						{
+							const std::string errorMessage = "SqlValue type mismatch in as<T>()";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						return valued->as();
+					};
 
-		template <typename T>
-		std::vector<T> toVector(const pqxx::array<T> &arr)
-		{
-			std::vector<T> result;
-			result.reserve(arr.size());
-			for (auto it = arr.cbegin(); it != arr.cend(); ++it)
-				result.push_back(static_cast<T>(*it)); // Copia sicura del valore
-			/*
-			Commentato per evitare un warning del compilatore generato a causa dell'operatore []
-			for (int index = 0; index < arr.size(); index++)
-				result.push_back(arr[index]); // Converte e copia
-			*/
-			return result;
-		}
-	};
+					template <class T>
+					std::vector<T> asArray(std::vector<T> valueIfNull = {})
+					{
+						if (isNull())
+							return valueIfNull;
+						if (!isArray())
+						{
+							const std::string errorMessage = "SqlValue does not contain an array, use as<T>() instead";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
+						if (!valued)
+						{
+							const std::string errorMessage = "SqlValue type mismatch in asArray<T>()";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						return valued->asArray();
+					}
+
+					template <class T>
+					std::optional<T> asOpt()
+					{
+						if (isNull())
+							return std::nullopt;
+						if (isArray())
+						{
+							const std::string errorMessage = "SqlValue contains an array, use asArrayOpt<T>() instead";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						auto valued = dynamic_pointer_cast<SqlType<T>>(value);
+
+						if (!valued)
+						{
+							const std::string errorMessage = "SqlValue type mismatch in as<T>()";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						return valued->as();
+					};
+
+					template <class T>
+					std::optional<std::vector<T>> asArrayOpt()
+					{
+						if (isNull())
+							return std::nullopt;
+						if (!isArray())
+						{
+							const std::string errorMessage = "SqlValue does not contain an array, use asOpt<T>() instead";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						auto valued = std::dynamic_pointer_cast<SqlType<T>>(value);
+						if (!valued)
+						{
+							const std::string errorMessage = "SqlValue type mismatch in asArrayOpt<T>()";
+							LOG_ERROR(errorMessage);
+							throw std::runtime_error(errorMessage);
+						}
+						return valued->asArray();
+					}
+
+					template <typename T>
+					std::vector<T> toVector(const pqxx::array<T> &arr)
+					{
+						std::vector<T> result;
+						result.reserve(arr.size());
+						for (auto it = arr.cbegin(); it != arr.cend(); ++it)
+							result.push_back(static_cast<T>(*it)); // Copia sicura del valore
+						/*
+						Commentato per evitare un warning del compilatore generato a causa dell'operatore []
+						for (int index = 0; index < arr.size(); index++)
+							result.push_back(arr[index]); // Converte e copia
+						*/
+						return result;
+					}
+				};
 
 			explicit SqlRow(std::vector<std::pair<std::string, SqlValueType>> *sqlColumnInfoByIndex,
 				std::map<std::string, std::pair<size_t, SqlValueType>> *sqlColumnInfoByName
