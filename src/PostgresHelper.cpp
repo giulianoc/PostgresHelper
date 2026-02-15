@@ -185,6 +185,7 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 				case 1009: // _text
 					sqlValueType = SqlResultSet::vectorText;
 					break;
+				case 701: // double precision (float8)
 				case 1700: // numeric
 					sqlValueType = SqlResultSet::double_;
 					break;
