@@ -459,8 +459,29 @@ string PostgresHelper::getColumnName(const shared_ptr<SqlColumnSchema>& sqlColum
 
 bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arrayDataType)
 {
+	switch (hash_case(dataType))
+	{
+		case "\"char\""_case:
+		case "integer"_case:
+		case "smallint"_case:
+		case "bigint"_case:
+		case "numeric"_case:
+		case "boolean"_case:
+		case "text"_case:
+		case "jsonb"_case:
+		case "double precision"_case:
+			return true;
+		case "ARRAY"_case:
+			if (arrayDataType == "_int4" || arrayDataType == "_text" || arrayDataType == "_bool" || arrayDataType == "_jsonb")
+				return true;
+			return false;
+		default:
+			if (dataType.starts_with("timestamp"))
+				return true;
+	}
+	/*
 	if (dataType == "\"char\"" || dataType == "integer" || dataType == "smallint" || dataType == "bigint" || dataType == "numeric" ||
-		dataType.starts_with("timestamp") || dataType == "boolean" || dataType == "text" || dataType == "jsonb")
+		dataType.starts_with("timestamp") || dataType == "boolean" || dataType == "text" || dataType == "jsonb" || dataType == "double precision")
 		return true;
 	if (dataType == "ARRAY")
 	{
@@ -468,6 +489,7 @@ bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arr
 			return true;
 		return false;
 	}
+	*/
 	return false;
 }
 
@@ -625,7 +647,7 @@ void PostgresHelper::loadSqlColumnsSchema(PostgresConnTrans &trans)
 
 				if (!isDataTypeManaged(dataType, arrayDataType))
 				{
-					LOG_ERROR(
+					LOG_WARN(
 						"dataType is not managed by our class"
 						", table_name: {}"
 						", column_name: {}"
