@@ -103,6 +103,7 @@ class PostgresHelper
 			text,
 			boolean,
 			json_,
+			jsonb,
 			vectorInt32,
 			vectorInt64,
 			vectorDouble,
@@ -240,8 +241,8 @@ class PostgresHelper
 
 			void add(const SqlValue& sqlValue) { _sqlRow.push_back(sqlValue); }
 
-			static nlohmann::json asJson(const std::string& fieldName, SqlValueType fieldType, SqlValue sqlValue) ;
-			[[nodiscard]] nlohmann::json asJson() const;
+			static nlohmann::ordered_json asJson(const std::string& fieldName, SqlValueType fieldType, SqlValue sqlValue) ;
+			[[nodiscard]] nlohmann::ordered_json asJson() const;
 
 			std::vector<SqlValue> &operator*() { return _sqlRow; }
 			[[nodiscard]] std::pair<size_t, SqlValueType> & info(const std::string& columnName, const bool caseSensitive = false) const
@@ -322,7 +323,7 @@ class PostgresHelper
 		[[nodiscard]] bool empty() const { return _sqlValuesByIndex.empty(); };
 		void setAffectedRows(const int affectedRows) { this->_affectedRows = affectedRows; }
 		[[nodiscard]] int getAffectedRows() const { return _affectedRows; }
-		nlohmann::json asJson() const;
+		[[nodiscard]] nlohmann::ordered_json asJson() const;
 		void addColumnType(std::string fieldName, SqlValueType sqlValueType)
 		{
 			size_t newColumnIndex = _sqlColumnInfoByIndex.size();

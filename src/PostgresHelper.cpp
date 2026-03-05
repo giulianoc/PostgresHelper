@@ -8,6 +8,7 @@
 
 using namespace std;
 using json = nlohmann::json;
+using ordered_json = nlohmann::ordered_json;
 
 PostgresHelper::PostgresHelper() = default;
 PostgresHelper::~PostgresHelper() = default;
@@ -190,8 +191,10 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 					sqlValueType = SqlResultSet::double_;
 					break;
 				case 114:  // json
-				case 3802: // jsonb
 					sqlValueType = SqlResultSet::json_;
+					break;
+				case 3802: // jsonb
+					sqlValueType = SqlResultSet::jsonb;
 					break;
 				case 3807: // array of jsonb
 					sqlValueType = SqlResultSet::vectorJson;
@@ -275,6 +278,15 @@ shared_ptr<PostgresHelper::SqlResultSet> PostgresHelper::buildResult(const pqxx:
 						sqlValue.setValue(make_shared<SqlType<double>>(field.as<double>()));
 						break;
 					case SqlResultSet::json_:
+						sqlValue.setValue(make_shared<SqlType<ordered_json>>(JSONUtils::toJson<ordered_json>(field.as<string>())));
+						LOG_TRACE("buildResult"
+							", fieldName: {}"
+							", fieldType: {}"
+							", fieldValue: {}"
+							, fieldName, field.type(), JSONUtils::toString(sqlValue.as(ordered_json()))
+							);
+						break;
+					case SqlResultSet::jsonb:
 						sqlValue.setValue(make_shared<SqlType<json>>(JSONUtils::toJson<json>(field.as<string>())));
 						LOG_TRACE("buildResult"
 							", fieldName: {}"
@@ -493,7 +505,7 @@ bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arr
 	return false;
 }
 
-json PostgresHelper::SqlResultSet::SqlRow::asJson(const string& fieldName, const SqlValueType fieldType, SqlValue sqlValue)
+ordered_json PostgresHelper::SqlResultSet::SqlRow::asJson(const string& fieldName, const SqlValueType fieldType, SqlValue sqlValue)
 {
 	if (sqlValue.isNull())
 		return nullptr;
@@ -512,6 +524,8 @@ json PostgresHelper::SqlResultSet::SqlRow::asJson(const string& fieldName, const
 	case boolean:
 		return sqlValue.as<bool>(false);
 	case json_:
+		return sqlValue.as<ordered_json>(nullptr);
+	case jsonb:
 		return sqlValue.as<json>(nullptr);
 	case vectorInt32:
 	{
@@ -568,7 +582,7 @@ json PostgresHelper::SqlResultSet::SqlRow::asJson(const string& fieldName, const
 	}
 }
 
-json PostgresHelper::SqlResultSet::SqlRow::asJson() const
+ordered_json PostgresHelper::SqlResultSet::SqlRow::asJson() const
 {
 	json rowRoot;
 
@@ -587,9 +601,9 @@ json PostgresHelper::SqlResultSet::SqlRow::asJson() const
 	return rowRoot;
 }
 
-json PostgresHelper::SqlResultSet::asJson() const
+ordered_json PostgresHelper::SqlResultSet::asJson() const
 {
-	json jsonRoot = json::array();
+	ordered_json jsonRoot = ordered_json::array();
 
 	for (auto& sqlRow : _sqlValuesByIndex)
 		jsonRoot.push_back(sqlRow.asJson());
