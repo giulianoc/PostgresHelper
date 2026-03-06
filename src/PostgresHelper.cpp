@@ -428,9 +428,11 @@ string PostgresHelper::getColumnName(const shared_ptr<SqlColumnSchema>& sqlColum
 {
 	string queryColumnName;
 
-	if (sqlColumnSchema->dataType.starts_with("timestamp") || sqlColumnSchema->dataType == "\"char\"" || sqlColumnSchema->dataType == "integer" ||
-		sqlColumnSchema->dataType == "smallint" || sqlColumnSchema->dataType == "bigint" || sqlColumnSchema->dataType == "numeric" ||
-		sqlColumnSchema->dataType == "boolean" || sqlColumnSchema->dataType == "text" || sqlColumnSchema->dataType == "jsonb")
+	if (sqlColumnSchema->dataType.starts_with("timestamp") || sqlColumnSchema->dataType == "\"char\""
+		|| sqlColumnSchema->dataType == "integer" || sqlColumnSchema->dataType == "smallint"
+		|| sqlColumnSchema->dataType == "bigint" || sqlColumnSchema->dataType == "numeric"
+		|| sqlColumnSchema->dataType == "boolean" || sqlColumnSchema->dataType == "text"
+		|| sqlColumnSchema->dataType == "json" || sqlColumnSchema->dataType == "jsonb")
 	{
 		if (requestedTableNameAlias.empty())
 			queryColumnName = sqlColumnSchema->columnName;
