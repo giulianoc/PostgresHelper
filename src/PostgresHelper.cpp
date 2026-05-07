@@ -482,6 +482,7 @@ bool PostgresHelper::isDataTypeManaged(const string& dataType, const string &arr
 		case "numeric"_case:
 		case "boolean"_case:
 		case "text"_case:
+		case "json"_case:
 		case "jsonb"_case:
 		case "double precision"_case:
 			return true;
