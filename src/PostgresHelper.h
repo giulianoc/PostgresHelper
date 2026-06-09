@@ -245,6 +245,11 @@ class PostgresHelper
 			[[nodiscard]] nlohmann::ordered_json asJson() const;
 
 			std::vector<SqlValue> &operator*() { return _sqlRow; }
+			[[nodiscard]] bool exists(const std::string& columnName, const bool caseSensitive = false) const
+			{
+				const auto it = _sqlColumnInfoByName->find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
+				return it != _sqlColumnInfoByName->end();
+			}
 			[[nodiscard]] std::pair<size_t, SqlValueType> & info(const std::string& columnName, const bool caseSensitive = false) const
 			{
 				const auto it = _sqlColumnInfoByName->find(caseSensitive ? columnName : StringUtils::lowerCase(columnName));
