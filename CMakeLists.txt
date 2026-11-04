@@ -17,26 +17,25 @@
 # Commercial use other than under the terms of the GNU General Public License is
 # allowed only after express negotiation of conditions with the authors.
 
-#cmake_minimum_required(VERSION 2.8.12)
-cmake_minimum_required(VERSION 3.30.2)
-
-project(PostgresHelper)
-
-# generate compile_commands.json
-set(CMAKE_EXPORT_COMPILE_COMMANDS
-    ON
-    CACHE INTERNAL "")
-
-set(CMAKE_CXX_FLAGS "-std=c++20")
-
-# this is to generate a compilation database (for the YCM vim plugin)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# set(CMAKE_BUILD_TYPE Debug) set(CMAKE_BUILD_TYPE RelWithDebInfo)
-set(CMAKE_BUILD_TYPE Release)
-
-set(PostgresHelper_VERSION_MAJOR 1)
-set(PostgresHelper_VERSION_MINOR 0)
+#cmake_minimum_required(VERSION 3.30.2)
+#
+#project(PostgresHelper)
+#
+## generate compile_commands.json
+#set(CMAKE_EXPORT_COMPILE_COMMANDS
+#    ON
+#    CACHE INTERNAL "")
+#
+#set(CMAKE_CXX_FLAGS "-std=c++20")
+#
+## this is to generate a compilation database (for the YCM vim plugin)
+#set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+#
+## set(CMAKE_BUILD_TYPE Debug) set(CMAKE_BUILD_TYPE RelWithDebInfo)
+#set(CMAKE_BUILD_TYPE Release)
+#
+#set(PostgresHelper_VERSION_MAJOR 1)
+#set(PostgresHelper_VERSION_MINOR 0)
 
 add_subdirectory(src)
 
